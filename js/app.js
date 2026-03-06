@@ -20,14 +20,22 @@ async function login() {
         });
 
         if (error) {
-            errorEl.textContent = 'Credenciales incorrectas';
+            errorEl.textContent = error.message;
             return;
         }
 
-        await loadUserProfile();
+        // Cargar perfil del usuario
+        const { data: profile } = await supabase
+            .from('perfiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+
+        currentUser = data.user;
+        currentProfile = profile || { rol: 'admin' }; // Fallback para admin
         showDashboard();
     } catch (err) {
-        errorEl.textContent = 'Error de conexión';
+        errorEl.textContent = 'Error de conexión: ' + err.message;
     }
 }
 
@@ -189,31 +197,34 @@ async function loadEventos() {
     const listEl = document.getElementById('eventos-list');
     listEl.innerHTML = '<p style="color: white;">Cargando...</p>';
 
-    let query = supabase
+    const { data, error } = await supabase
         .from('eventos')
-        .select('*')
-        .eq('activo', true)
-        .order('created_at', { ascending: false });
-    
-    // Usuarios solo ven sus eventos, admins ven todos
-    if (!isAdmin()) {
-        query = query.eq('usuario_id', currentUser.id);
-    }
-
-    const { data, error } = await query;
+        .select('*');
 
     if (error) {
         listEl.innerHTML = '<p style="color: white;">Error cargando eventos</p>';
         return;
     }
 
-    if (!data || data.length === 0) {
+    // Filtrar eventos según rol
+    let eventos = data || [];
+    if (!isAdmin()) {
+        eventos = eventos.filter(evento => evento.usuario_id === currentUser.id);
+    }
+    
+    // Filtrar solo eventos activos
+    eventos = eventos.filter(evento => evento.activo);
+    
+    // Ordenar por fecha de creación
+    eventos.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    if (eventos.length === 0) {
         listEl.innerHTML = '<p style="color: white; text-align: center;">No hay eventos. Crea uno para comenzar.</p>';
         return;
     }
 
     listEl.innerHTML = '';
-    data.forEach(evento => {
+    eventos.forEach(evento => {
         const card = document.createElement('div');
         card.className = 'evento-card';
         const fechaInicio = new Date(evento.fecha_inicio + 'T00:00:00').toLocaleDateString('es-BO');
@@ -514,15 +525,23 @@ async function loadEstudiantes() {
 
     const { data } = await supabase
         .from('estudiantes')
-        .select('*')
-        .order('especialidad', { ascending: true })
-        .order('anio', { ascending: true })
-        .order('codigo_unico', { ascending: true });
+        .select('*');
 
     if (!data || data.length === 0) {
         container.innerHTML = '<p style="color: white;">No hay estudiantes. Crea una especialidad para comenzar.</p>';
         return;
     }
+
+    // Ordenar en JavaScript
+    data.sort((a, b) => {
+        if (a.especialidad !== b.especialidad) {
+            return a.especialidad.localeCompare(b.especialidad);
+        }
+        if (a.anio !== b.anio) {
+            return a.anio - b.anio;
+        }
+        return a.codigo_unico.localeCompare(b.codigo_unico);
+    });
 
     const grouped = {};
     data.forEach(est => {
