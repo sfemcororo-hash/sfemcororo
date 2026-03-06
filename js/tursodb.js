@@ -108,13 +108,11 @@ class TursoDB {
                 then: async (callback) => {
                     const result = await self.query(`SELECT ${fields} FROM ${tableName}`);
                     const response = { data: result.rows, error: result.error };
-                    console.log('Query result for', tableName, ':', response);
                     return callback ? callback(response) : response;
                 }
             }),
             
             insert: async (data) => {
-                console.log('Insertando en', tableName, ':', data);
                 const fields = Object.keys(data);
                 const values = Object.values(data);
                 const placeholders = fields.map(() => '?').join(', ');
@@ -122,7 +120,6 @@ class TursoDB {
                 const id = Date.now().toString();
                 let insertData;
                 
-                // Usar timestamp para asistencias, created_at para otras tablas
                 if (tableName === 'asistencias') {
                     insertData = { id, ...data, timestamp: new Date().toISOString() };
                 } else {
@@ -133,15 +130,11 @@ class TursoDB {
                 const insertValues = Object.values(insertData);
                 const insertPlaceholders = insertFields.map(() => '?').join(', ');
                 
-                console.log('SQL:', `INSERT INTO ${tableName} (${insertFields.join(', ')}) VALUES (${insertPlaceholders})`);
-                console.log('Values:', insertValues);
-                
                 const result = await self.query(
                     `INSERT INTO ${tableName} (${insertFields.join(', ')}) VALUES (${insertPlaceholders})`,
                     insertValues
                 );
                 
-                console.log('Insert result:', result);
                 return { data: insertData, error: result.error };
             }
         };

@@ -1,37 +1,25 @@
-# Variables de entorno
-.env
-.env.local
-.env.production
-
-# Credenciales
-credentials.json
-secrets.json
-
 # Logs
 *.log
 npm-debug.log*
 
-# Sistema operativo
-.DS_Store
-Thumbs.db
+# Environment variables
+.env
+.env.local
 
-# IDEs
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Backups
-*.backup
-*.bak
-backup/
+# OS
+.DS_Store
+Thumbs.db
 
-# Node modules (si usas build tools)
-node_modules/
-dist/
-build/
-
-# Archivos temporales
-tmp/
-temp/
+# Temporary files
 *.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup

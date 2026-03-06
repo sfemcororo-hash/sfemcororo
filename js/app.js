@@ -1,5 +1,18 @@
 let html5QrCode = null;
 let isScanning = false;
+let currentUser = null;
+let currentProfile = null;
+let currentEventId = null;
+let eventoTimer = null;
+let currentPage = 1;
+const eventsPerPage = 5;
+let totalEvents = 0;
+let allEvents = [];
+let currentEspecialidad = null;
+let currentAnio = null;
+let qrCodesGenerated = [];
+let currentEventoId = null;
+let currentEventoNombre = null;
 
 // ========== AUTENTICACIÓN CON SUPABASE AUTH ==========
 
@@ -54,10 +67,7 @@ function isUsuario() {
     return currentProfile?.rol === 'usuario';
 }
 
-let currentEventId = null;
-let eventoTimer = null;
 
-// ========== NAVEGACIÓN ==========
 
 function showLogin() {
     hideAllSections();
@@ -67,20 +77,16 @@ function showLogin() {
 function showDashboard() {
     hideAllSections();
     document.getElementById('dashboard-section').classList.add('active');
-    
-    // Actualizar header según rol
-    const headerTitle = document.querySelector('#dashboard-section .header h1');
-    const btnEstudiantes = document.querySelector('#dashboard-section .header button[onclick="showEstudiantes()"]');
-    
-    if (isAdmin()) {
-        headerTitle.textContent = 'Panel de Administrador';
-        btnEstudiantes.style.display = 'inline-block';
-    } else {
-        headerTitle.textContent = 'Mis Eventos';
-        btnEstudiantes.style.display = 'none';
-    }
-    
+}
+
+function showAsistenciaModule() {
+    hideAllSections();
+    document.getElementById('asistencia-module-section').classList.add('active');
     loadEventos();
+}
+
+function showBibliotecaModule() {
+    alert('Módulo de Biblioteca en desarrollo. Próximamente disponible.');
 }
 
 function showCreateEvent() {
@@ -94,7 +100,6 @@ function showScanner(eventoId, eventoNombre) {
     document.getElementById('evento-title').textContent = eventoNombre;
     document.getElementById('scanner-section').classList.add('active');
     
-    // Validar fecha y hora del evento
     validarEventoActivo(eventoId).then(esValido => {
         if (esValido) {
             startScanner();
@@ -190,12 +195,16 @@ async function crearEvento() {
     document.getElementById('evento-hora-fin').value = '18:00';
     document.getElementById('evento-imagen').value = '';
 
-    showDashboard();
+    showAsistenciaModule();
 }
 
-async function loadEventos() {
+async function loadEventos(page = 1) {
+    currentPage = page;
     const listEl = document.getElementById('eventos-list');
+    const paginationEl = document.getElementById('pagination-controls');
+    
     listEl.innerHTML = '<p style="color: white;">Cargando...</p>';
+    paginationEl.innerHTML = '';
 
     const { data, error } = await supabase
         .from('eventos')
@@ -215,33 +224,96 @@ async function loadEventos() {
     // Filtrar solo eventos activos
     eventos = eventos.filter(evento => evento.activo);
     
-    // Ordenar por fecha de creación
+    // Ordenar por fecha de creación (más recientes primero)
     eventos.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
+    allEvents = eventos;
+    totalEvents = eventos.length;
 
-    if (eventos.length === 0) {
+    if (totalEvents === 0) {
         listEl.innerHTML = '<p style="color: white; text-align: center;">No hay eventos. Crea uno para comenzar.</p>';
         return;
     }
 
+    // Calcular eventos para la página actual
+    const startIndex = (currentPage - 1) * eventsPerPage;
+    const endIndex = startIndex + eventsPerPage;
+    const eventosPage = eventos.slice(startIndex, endIndex);
+
+    // Mostrar eventos de la página actual
     listEl.innerHTML = '';
-    eventos.forEach(evento => {
+    
+    for (const evento of eventosPage) {
+        // Verificar si tiene asistencias
+        const { data: asistencias } = await supabase.query(`
+            SELECT COUNT(*) as total FROM asistencias WHERE evento_id = ?
+        `, [evento.id]);
+        
+        const tieneAsistencias = asistencias && asistencias[0] && parseInt(asistencias[0].total) > 0;
+        console.log(`Evento ${evento.nombre}: ${asistencias?.[0]?.total || 0} asistencias - Tiene asistencias: ${tieneAsistencias}`);
+        
         const card = document.createElement('div');
         card.className = 'evento-card';
         const fechaInicio = new Date(evento.fecha_inicio + 'T00:00:00').toLocaleDateString('es-BO');
         const fechaFin = new Date(evento.fecha_fin + 'T00:00:00').toLocaleDateString('es-BO');
         const rangoFecha = fechaInicio === fechaFin ? fechaInicio : `${fechaInicio} - ${fechaFin}`;
+        
         card.innerHTML = `
             <div class="evento-info">
                 <h3>${evento.nombre}</h3>
                 <p>📅 ${rangoFecha}</p>
                 <p>🕒 ${evento.hora_inicio} - ${evento.hora_fin}</p>
             </div>
-            <button class="btn-asistencia" onclick="showScanner('${evento.id}', '${evento.nombre}')">
-                Tomar Asistencia
-            </button>
+            <div class="evento-actions">
+                <button class="btn-asistencia" onclick="showScanner('${evento.id}', '${evento.nombre}')">
+                    Tomar Asistencia
+                </button>
+                <button class="btn-info" onclick="verListaAsistencias('${evento.id}', '${evento.nombre.replace(/'/g, "\\'")}')">📋 Ver Lista</button>
+                ${!tieneAsistencias ? 
+                    `<button class="btn-danger" onclick="eliminarEvento('${evento.id}')">🗑️ Eliminar</button>` : ''
+                }
+            </div>
         `;
         listEl.appendChild(card);
-    });
+    }
+    
+    // Mostrar controles de paginación
+    renderPagination();
+}
+
+function renderPagination() {
+    const paginationEl = document.getElementById('pagination-controls');
+    const totalPages = Math.ceil(totalEvents / eventsPerPage);
+    
+    if (totalPages <= 1) {
+        paginationEl.innerHTML = '';
+        return;
+    }
+    
+    let paginationHTML = '';
+    
+    // Botón anterior
+    paginationHTML += `
+        <button class="pagination-btn" onclick="loadEventos(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+            ← Anterior
+        </button>
+    `;
+    
+    // Información de página
+    paginationHTML += `
+        <span class="pagination-info">
+            Página ${currentPage} de ${totalPages} (${totalEvents} eventos)
+        </span>
+    `;
+    
+    // Botón siguiente
+    paginationHTML += `
+        <button class="pagination-btn" onclick="loadEventos(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+            Siguiente →
+        </button>
+    `;
+    
+    paginationEl.innerHTML = paginationHTML;
 }
 
 // ========== ESCÁNER QR ==========
@@ -277,8 +349,8 @@ function iniciarMonitoreoEvento(eventoId) {
         // Verificar si ya pasó el tiempo (con tolerancia)
         if (fechaActual > evento.fecha_fin || (fechaActual === evento.fecha_fin && horaActual > horaFinConTolerancia)) {
             clearInterval(eventoTimer);
-            alert('⏰ El periodo del evento ha finalizado. Redirigiendo al dashboard...');
-            showDashboard();
+            alert('⏰ El periodo del evento ha finalizado. Redirigiendo al módulo...');
+            showAsistenciaModule();
         }
     }, 60000); // Cada 60 segundos
 }
@@ -296,16 +368,10 @@ async function validarEventoActivo(eventoId) {
     const fechaActual = ahora.toISOString().split('T')[0];
     const horaActual = ahora.getHours().toString().padStart(2, '0') + ':' + ahora.getMinutes().toString().padStart(2, '0');
     
-    console.log('Validación:', {
-        fechaActual,
-        horaActual,
-        evento
-    });
-    
     // Validar fecha
     if (fechaActual < evento.fecha_inicio || fechaActual > evento.fecha_fin) {
         alert(`⚠️ Este evento solo está activo entre ${evento.fecha_inicio} y ${evento.fecha_fin}\nFecha actual: ${fechaActual}`);
-        showDashboard();
+        showAsistenciaModule();
         return false;
     }
     
@@ -316,7 +382,7 @@ async function validarEventoActivo(eventoId) {
     // Validar hora
     if (horaActual < horaInicio || horaActual > horaFin) {
         alert(`⚠️ Este evento solo registra asistencias entre ${horaInicio} y ${horaFin}\nHora actual: ${horaActual}`);
-        showDashboard();
+        showAsistenciaModule();
         return false;
     }
     
@@ -517,10 +583,6 @@ function showMessage(text, type) {
 }
 
 // ========== GESTIÓN DE ESTUDIANTES ==========
-
-let currentEspecialidad = null;
-let currentAnio = null;
-let qrCodesGenerated = [];
 
 async function loadEstudiantes() {
     hideAllSections();
@@ -726,7 +788,6 @@ async function generarQRsGrupo() {
 }
 
 async function generarQRsGrupoDirecto(especialidad, anio) {
-    console.log('Generando QRs para:', especialidad, anio);
     currentEspecialidad = especialidad;
     currentAnio = anio;
     
@@ -740,17 +801,14 @@ async function generarQRsGrupoDirecto(especialidad, anio) {
     const { data, error } = await supabase.from('estudiantes').select('*');
     
     if (error) {
-        console.error('Error cargando estudiantes:', error);
         container.innerHTML = '<p style="color: white;">Error cargando estudiantes</p>';
         return;
     }
 
-    // Filtrar por especialidad y año en JavaScript
     const estudiantesFiltrados = (data || []).filter(est => 
         est.especialidad === especialidad && est.anio == anio
     );
     
-    // Ordenar por codigo_unico
     estudiantesFiltrados.sort((a, b) => a.codigo_unico.localeCompare(b.codigo_unico));
 
     if (estudiantesFiltrados.length === 0) {
@@ -773,7 +831,6 @@ async function generarQRsGrupoDirecto(especialidad, anio) {
         container.appendChild(qrItem);
 
         setTimeout(() => {
-            console.log('Generando QR para elemento:', `qr-${index}`);
             const qrElement = document.getElementById(`qr-${index}`);
             if (qrElement && typeof QRCode !== 'undefined') {
                 new QRCode(qrElement, {
@@ -781,8 +838,6 @@ async function generarQRsGrupoDirecto(especialidad, anio) {
                 width: 180,
                 height: 180
             });
-        } else {
-            console.error('No se encontró el elemento QR o la librería QRCode');
         }
         }, index * 100);
 
@@ -807,4 +862,224 @@ function downloadAllQRs() {
     qrCodesGenerated.forEach((qr, index) => {
         setTimeout(() => downloadSingleQR(qr.id, qr.codigo), index * 300);
     });
+}
+// ========== GESTIÓN DE EVENTOS AVANZADA ==========
+
+async function eliminarEvento(eventoId) {
+    if (!confirm('¿Estás seguro de que quieres eliminar este evento? Esta acción no se puede deshacer.')) {
+        return;
+    }
+    
+    try {
+        // Verificar que no tenga asistencias
+        const { data: asistencias } = await supabase.query(`
+            SELECT COUNT(*) as total FROM asistencias WHERE evento_id = ?
+        `, [eventoId]);
+        
+        if (asistencias && asistencias[0] && asistencias[0].total > 0) {
+            alert('No se puede eliminar un evento que tiene asistencias registradas.');
+            return;
+        }
+        
+        // Eliminar evento
+        await supabase.query(`DELETE FROM eventos WHERE id = ?`, [eventoId]);
+        
+        alert('Evento eliminado correctamente.');
+        loadEventos(currentPage);
+    } catch (error) {
+        console.error('Error eliminando evento:', error);
+        alert('Error al eliminar el evento.');
+    }
+}
+
+async function verListaAsistencias(eventoId, eventoNombre) {
+    currentEventoId = eventoId;
+    currentEventoNombre = eventoNombre;
+    
+    hideAllSections();
+    document.getElementById('ver-asistencias-section').classList.add('active');
+    document.getElementById('asistencias-evento-title').textContent = `Asistencias - ${eventoNombre}`;
+    
+    const listEl = document.getElementById('asistencias-completas-list');
+    listEl.innerHTML = '<p>Cargando asistencias...</p>';
+    
+    try {
+        const result = await supabase.query(`
+            SELECT 
+                a.timestamp,
+                e.codigo_unico,
+                e.dni,
+                e.nombre,
+                e.apellido_paterno,
+                e.apellido_materno,
+                e.celular,
+                e.email,
+                e.especialidad,
+                e.anio
+            FROM asistencias a
+            JOIN estudiantes e ON a.estudiante_id = e.id
+            WHERE a.evento_id = ?
+            ORDER BY a.timestamp DESC
+        `, [eventoId]);
+        
+        if (!result.rows || result.rows.length === 0) {
+            listEl.innerHTML = '<p>No hay asistencias registradas para este evento.</p>';
+            return;
+        }
+        
+        // Crear tabla
+        let tableHTML = `
+            <h3>Total de asistencias: ${result.rows.length}</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha/Hora</th>
+                        <th>Código</th>
+                        <th>DNI</th>
+                        <th>Nombre Completo</th>
+                        <th>Celular</th>
+                        <th>Email</th>
+                        <th>Especialidad</th>
+                        <th>Año</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        result.rows.forEach(asistencia => {
+            const fecha = new Date(asistencia.timestamp).toLocaleString('es-BO');
+            const nombreCompleto = `${asistencia.nombre} ${asistencia.apellido_paterno} ${asistencia.apellido_materno || ''}`;
+            
+            tableHTML += `
+                <tr>
+                    <td>${fecha}</td>
+                    <td>${asistencia.codigo_unico}</td>
+                    <td>${asistencia.dni || 'N/A'}</td>
+                    <td>${nombreCompleto}</td>
+                    <td>${asistencia.celular || 'N/A'}</td>
+                    <td>${asistencia.email || 'N/A'}</td>
+                    <td>${asistencia.especialidad || 'N/A'}</td>
+                    <td>${asistencia.anio || 'N/A'}</td>
+                </tr>
+            `;
+        });
+        
+        tableHTML += '</tbody></table>';
+        listEl.innerHTML = tableHTML;
+        
+    } catch (error) {
+        console.error('Error cargando asistencias:', error);
+        listEl.innerHTML = '<p>Error cargando las asistencias.</p>';
+    }
+}
+
+async function exportarAsistenciasExcel() {
+    if (!currentEventoId) return;
+    
+    try {
+        const result = await supabase.query(`
+            SELECT 
+                a.timestamp,
+                e.codigo_unico,
+                e.dni,
+                e.nombre,
+                e.apellido_paterno,
+                e.apellido_materno,
+                e.celular,
+                e.email,
+                e.especialidad,
+                e.anio
+            FROM asistencias a
+            JOIN estudiantes e ON a.estudiante_id = e.id
+            WHERE a.evento_id = ?
+            ORDER BY a.timestamp DESC
+        `, [currentEventoId]);
+        
+        if (!result.rows || result.rows.length === 0) {
+            alert('No hay asistencias para exportar.');
+            return;
+        }
+        
+        // Preparar datos para Excel (reordenando columnas)
+        const excelData = result.rows.map(asistencia => {
+            const fecha = new Date(asistencia.timestamp).toLocaleString('es-BO');
+            const nombreCompleto = `${asistencia.nombre} ${asistencia.apellido_paterno} ${asistencia.apellido_materno || ''}`;
+            
+            return {
+                'Código': asistencia.codigo_unico,
+                'CI': asistencia.dni || 'N/A',
+                'Nombre Completo': nombreCompleto,
+                'Celular': asistencia.celular || 'N/A',
+                'Email': asistencia.email || 'N/A',
+                'Especialidad': asistencia.especialidad || 'N/A',
+                'Año': asistencia.anio || 'N/A',
+                'Fecha/Hora Registro': fecha
+            };
+        });
+        
+        // Crear libro de Excel
+        const wb = XLSX.utils.book_new();
+        
+        // Crear datos con título
+        const wsData = [
+            [`REPORTE DE ASISTENCIAS - ${currentEventoNombre.toUpperCase()}`],
+            [`Fecha de generación: ${new Date().toLocaleDateString('es-BO')}`],
+            [`Total de asistencias: ${result.rows.length}`],
+            [], // Fila vacía
+            // Encabezados
+            ['Código', 'CI', 'Nombre Completo', 'Celular', 'Email', 'Especialidad', 'Año', 'Fecha/Hora Registro']
+        ];
+        
+        // Agregar datos de asistencias
+        excelData.forEach(row => {
+            wsData.push([
+                row['Código'],
+                row['CI'],
+                row['Nombre Completo'],
+                row['Celular'],
+                row['Email'],
+                row['Especialidad'],
+                row['Año'],
+                row['Fecha/Hora Registro']
+            ]);
+        });
+        
+        // Crear hoja de trabajo
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        
+        // Ajustar ancho de columnas
+        const colWidths = [
+            { wch: 12 }, // Código
+            { wch: 12 }, // CI
+            { wch: 25 }, // Nombre Completo
+            { wch: 15 }, // Celular
+            { wch: 25 }, // Email
+            { wch: 20 }, // Especialidad
+            { wch: 8 },  // Año
+            { wch: 20 }  // Fecha/Hora Registro
+        ];
+        ws['!cols'] = colWidths;
+        
+        // Fusionar celdas para el título
+        ws['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }, // Título
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } }, // Fecha generación
+            { s: { r: 2, c: 0 }, e: { r: 2, c: 7 } }  // Total asistencias
+        ];
+        
+        // Agregar hoja al libro
+        XLSX.utils.book_append_sheet(wb, ws, 'Asistencias');
+        
+        // Generar nombre de archivo
+        const nombreArchivo = `Asistencias_${currentEventoNombre.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        
+        // Descargar archivo Excel
+        XLSX.writeFile(wb, nombreArchivo);
+        
+        alert('Archivo Excel exportado correctamente.');
+        
+    } catch (error) {
+        console.error('Error exportando:', error);
+        alert('Error al exportar el archivo.');
+    }
 }
