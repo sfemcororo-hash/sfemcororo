@@ -400,16 +400,15 @@ async function onScanSuccess(codigoUnico) {
             return;
         }
 
-        const { data: asistenciaExiste, error: checkError } = await supabase
+        const { data: todasAsistencias } = await supabase
             .from('asistencias')
-            .select('id')
-            .eq('estudiante_id', estudiante.id)
-            .eq('evento_id', currentEventId)
-            .maybeSingle();
+            .select('*');
+        
+        const asistenciaExiste = todasAsistencias?.find(a => 
+            a.estudiante_id === estudiante.id && a.evento_id === currentEventId
+        );
 
-        if (checkError) {
-            console.error('Error verificando asistencia:', checkError);
-        }
+
 
         if (asistenciaExiste) {
             showMessage('Asistencia ya registrada', 'warning');
@@ -430,7 +429,11 @@ async function onScanSuccess(codigoUnico) {
         }
 
         showMessage(`✓ ${estudiante.nombre} ${estudiante.apellido_paterno} ${estudiante.apellido_materno || ''} - Asistencia registrada`, 'success');
-        loadAsistencias(currentEventId);
+        
+        // Esperar un momento antes de recargar las asistencias
+        setTimeout(() => {
+            loadAsistencias(currentEventId);
+        }, 500);
         
         // Reiniciar escáner después de 2 segundos
         setTimeout(() => { 
@@ -454,24 +457,28 @@ async function onScanSuccess(codigoUnico) {
 // ========== ASISTENCIAS ==========
 
 async function loadAsistencias(eventoId) {
+    console.log('Cargando asistencias para evento:', eventoId);
     const listEl = document.getElementById('asistencias-list');
     
-    const { data, error } = await supabase
-        .from('asistencias')
-        .select(`
-            *,
-            estudiantes (nombre, apellido_paterno, apellido_materno, codigo_unico, dni, especialidad, anio)
-        `)
-        .eq('evento_id', eventoId)
-        .order('timestamp', { ascending: false });
-
-    if (!data || data.length === 0) {
+    // Usar consulta SQL directa
+    console.log('Ejecutando consulta SQL con eventoId:', eventoId, 'tipo:', typeof eventoId);
+    const result = await supabase.query(`
+        SELECT a.*, e.nombre, e.apellido_paterno, e.apellido_materno, e.codigo_unico, e.dni, e.especialidad, e.anio
+        FROM asistencias a
+        JOIN estudiantes e ON a.estudiante_id = e.id
+        WHERE a.evento_id = ?
+        ORDER BY a.timestamp DESC
+    `, [eventoId]);
+    
+    console.log('Resultado consulta directa:', result);
+    
+    if (!result.rows || result.rows.length === 0) {
         listEl.innerHTML = '<p style="text-align: center; color: #666;">No hay asistencias registradas</p>';
         return;
     }
 
     listEl.innerHTML = '';
-    data.forEach(asistencia => {
+    result.rows.forEach(asistencia => {
         const item = document.createElement('div');
         item.className = 'asistencia-item';
         const time = new Date(asistencia.timestamp).toLocaleString('es-BO', { 
@@ -481,15 +488,14 @@ async function loadAsistencias(eventoId) {
             month: '2-digit',
             year: 'numeric'
         });
-        const est = asistencia.estudiantes;
         item.innerHTML = `
             <div style="width: 100%;">
-                <strong style="font-size: 16px; color: #333;">${est.nombre} ${est.apellido_paterno} ${est.apellido_materno || ''}</strong><br>
+                <strong style="font-size: 16px; color: #333;">${asistencia.nombre} ${asistencia.apellido_paterno} ${asistencia.apellido_materno || ''}</strong><br>
                 <small style="color: #666; font-size: 13px;">
-                    📋 ${est.codigo_unico} | 
-                    🆔 ${est.dni || 'Sin DNI'} | 
-                    🎓 ${est.especialidad || 'Sin especialidad'} | 
-                    📅 Año ${est.anio || 'N/A'}
+                    📋 ${asistencia.codigo_unico} | 
+                    🆔 ${asistencia.dni || 'Sin DNI'} | 
+                    🎓 ${asistencia.especialidad || 'Sin especialidad'} | 
+                    📅 Año ${asistencia.anio || 'N/A'}
                 </small>
             </div>
             <span style="color: #007bff; font-weight: bold;">${time}</span>
@@ -720,6 +726,7 @@ async function generarQRsGrupo() {
 }
 
 async function generarQRsGrupoDirecto(especialidad, anio) {
+    console.log('Generando QRs para:', especialidad, anio);
     currentEspecialidad = especialidad;
     currentAnio = anio;
     
@@ -730,21 +737,30 @@ async function generarQRsGrupoDirecto(especialidad, anio) {
     container.innerHTML = '<p style="color: white;">Generando QRs...</p>';
     qrCodesGenerated = [];
 
-    const { data } = await supabase
-        .from('estudiantes')
-        .select('*')
-        .eq('especialidad', especialidad)
-        .eq('anio', anio)
-        .order('codigo_unico', { ascending: true });
+    const { data, error } = await supabase.from('estudiantes').select('*');
+    
+    if (error) {
+        console.error('Error cargando estudiantes:', error);
+        container.innerHTML = '<p style="color: white;">Error cargando estudiantes</p>';
+        return;
+    }
 
-    if (!data || data.length === 0) {
+    // Filtrar por especialidad y año en JavaScript
+    const estudiantesFiltrados = (data || []).filter(est => 
+        est.especialidad === especialidad && est.anio == anio
+    );
+    
+    // Ordenar por codigo_unico
+    estudiantesFiltrados.sort((a, b) => a.codigo_unico.localeCompare(b.codigo_unico));
+
+    if (estudiantesFiltrados.length === 0) {
         container.innerHTML = '<p style="color: white;">No hay estudiantes</p>';
         return;
     }
 
     container.innerHTML = '';
     
-    data.forEach((est, index) => {
+    estudiantesFiltrados.forEach((est, index) => {
         const qrItem = document.createElement('div');
         qrItem.className = 'qr-item';
         const nombreCompleto = `${est.nombre} ${est.apellido_paterno} ${est.apellido_materno || ''}`;
@@ -757,11 +773,17 @@ async function generarQRsGrupoDirecto(especialidad, anio) {
         container.appendChild(qrItem);
 
         setTimeout(() => {
-            new QRCode(document.getElementById(`qr-${index}`), {
+            console.log('Generando QR para elemento:', `qr-${index}`);
+            const qrElement = document.getElementById(`qr-${index}`);
+            if (qrElement && typeof QRCode !== 'undefined') {
+                new QRCode(qrElement, {
                 text: est.codigo_unico,
                 width: 180,
                 height: 180
             });
+        } else {
+            console.error('No se encontró el elemento QR o la librería QRCode');
+        }
         }, index * 100);
 
         qrCodesGenerated.push({ id: `qr-${index}`, codigo: est.codigo_unico });

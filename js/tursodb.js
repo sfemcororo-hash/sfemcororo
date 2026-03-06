@@ -54,7 +54,7 @@ class TursoDB {
             
             const data = await response.json();
             
-            if (data.results && data.results[0]) {
+            if (data.results && data.results[0] && data.results[0].response) {
                 const result = data.results[0].response.result;
                 return {
                     rows: result.rows?.map(row => {
@@ -108,26 +108,40 @@ class TursoDB {
                 then: async (callback) => {
                     const result = await self.query(`SELECT ${fields} FROM ${tableName}`);
                     const response = { data: result.rows, error: result.error };
+                    console.log('Query result for', tableName, ':', response);
                     return callback ? callback(response) : response;
                 }
             }),
             
             insert: async (data) => {
+                console.log('Insertando en', tableName, ':', data);
                 const fields = Object.keys(data);
                 const values = Object.values(data);
                 const placeholders = fields.map(() => '?').join(', ');
                 
                 const id = Date.now().toString();
-                const insertData = { id, ...data, created_at: new Date().toISOString() };
+                let insertData;
+                
+                // Usar timestamp para asistencias, created_at para otras tablas
+                if (tableName === 'asistencias') {
+                    insertData = { id, ...data, timestamp: new Date().toISOString() };
+                } else {
+                    insertData = { id, ...data, created_at: new Date().toISOString() };
+                }
+                
                 const insertFields = Object.keys(insertData);
                 const insertValues = Object.values(insertData);
                 const insertPlaceholders = insertFields.map(() => '?').join(', ');
+                
+                console.log('SQL:', `INSERT INTO ${tableName} (${insertFields.join(', ')}) VALUES (${insertPlaceholders})`);
+                console.log('Values:', insertValues);
                 
                 const result = await self.query(
                     `INSERT INTO ${tableName} (${insertFields.join(', ')}) VALUES (${insertPlaceholders})`,
                     insertValues
                 );
                 
+                console.log('Insert result:', result);
                 return { data: insertData, error: result.error };
             }
         };
@@ -193,7 +207,8 @@ class TursoDB {
                 id TEXT PRIMARY KEY,
                 estudiante_id TEXT NOT NULL,
                 evento_id TEXT NOT NULL,
-                timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+                timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
         `);
         
