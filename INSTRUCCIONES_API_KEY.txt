@@ -1,0 +1,20 @@
+⚠️ CLAVE INCORRECTA DETECTADA
+
+La clave que proporcionaste:
+sb_publishable_Y0btNcjETyLzkEkjRYYBjw_JQg_I1dj
+
+NO es la correcta.
+
+PASOS PARA OBTENER LA CLAVE CORRECTA:
+
+1. Ve a: https://cvzfsqesseeqprvetmtz.supabase.co
+2. Click en Settings (⚙️) en el menú izquierdo
+3. Click en "API"
+4. En la sección "Project API keys"
+5. Copia la clave "anon" "public" (es MUY LARGA, ~200 caracteres)
+6. Debe empezar con: eyJhbGc...
+
+Ejemplo de clave correcta:
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2emZzcWVzc2VlcXBydmV0bXR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODc...
+
+Una vez que tengas la clave correcta, dímela y actualizaré el archivo config.js

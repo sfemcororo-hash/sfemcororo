@@ -1,0 +1,10 @@
+-- DESHABILITAR RLS TEMPORALMENTE
+ALTER TABLE perfiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE estudiantes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE eventos DISABLE ROW LEVEL SECURITY;
+ALTER TABLE asistencias DISABLE ROW LEVEL SECURITY;
+
+-- Migrar eventos
+UPDATE eventos 
+SET usuario_id = (SELECT id FROM auth.users WHERE email = 'admin@escuela.com')
+WHERE usuario_id IS NULL;

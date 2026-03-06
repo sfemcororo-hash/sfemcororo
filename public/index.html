@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Asistencia QR</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Login -->
+        <div id="login-section" class="section active">
+            <div class="login-container">
+                <h1>🎓 Sistema de Asistencia</h1>
+                <div class="card">
+                    <input type="email" id="email" placeholder="Email">
+                    <input type="password" id="password" placeholder="Contraseña">
+                    <button onclick="login()">Ingresar</button>
+                    <p id="login-error" class="error"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard-section" class="section hidden">
+            <div class="header">
+                <h1>Mis Eventos</h1>
+                <div>
+                    <button onclick="showEstudiantes()" class="btn-secondary" style="margin-right: 10px;">👥 Estudiantes</button>
+                    <button onclick="logout()" class="btn-secondary">Cerrar Sesión</button>
+                </div>
+            </div>
+            <div class="container">
+                <button onclick="showCreateEvent()" class="btn-create">+ Crear Evento</button>
+                <div id="eventos-list"></div>
+            </div>
+        </div>
+
+        <!-- Crear Evento -->
+        <div id="create-event-section" class="section hidden">
+            <div class="header">
+                <h1>Crear Evento</h1>
+                <button onclick="showDashboard()" class="btn-secondary">← Volver</button>
+            </div>
+            <div class="container">
+                <div class="card">
+                    <input type="text" id="evento-nombre" placeholder="Nombre del evento">
+                    <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Fecha Inicio:</label>
+                    <input type="date" id="evento-fecha-inicio">
+                    <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Fecha Fin:</label>
+                    <input type="date" id="evento-fecha-fin">
+                    <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Hora Inicio:</label>
+                    <input type="time" id="evento-hora-inicio" value="08:00">
+                    <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Hora Fin:</label>
+                    <input type="time" id="evento-hora-fin" value="18:00">
+                    <input type="file" id="evento-imagen" accept="image/*">
+                    <button onclick="crearEvento()" class="btn-primary">Crear Evento</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tomar Asistencia -->
+        <div id="scanner-section" class="section hidden">
+            <div class="header">
+                <h1 id="evento-title"></h1>
+                <button onclick="showDashboard()" class="btn-secondary">← Volver</button>
+            </div>
+            <div class="container">
+                <div id="reader"></div>
+                <div id="mensaje"></div>
+                <div class="asistencias-box">
+                    <h3>Asistencias Registradas</h3>
+                    <div id="asistencias-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gestión de Estudiantes -->
+        <div id="estudiantes-section" class="section hidden">
+            <div class="header">
+                <h1>Gestión de Estudiantes</h1>
+                <button onclick="showDashboard()" class="btn-secondary">← Volver</button>
+            </div>
+            <div class="container">
+                <button onclick="showCrearEspecialidad()" class="btn-create">+ Nueva Especialidad/Año</button>
+                <div id="especialidades-accordion"></div>
+            </div>
+        </div>
+
+        <!-- Crear Especialidad/Año -->
+        <div id="crear-especialidad-section" class="section hidden">
+            <div class="header">
+                <h1>Nueva Especialidad y Año</h1>
+                <button onclick="showEstudiantes()" class="btn-secondary">← Volver</button>
+            </div>
+            <div class="container">
+                <div class="card">
+                    <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Especialidad:</label>
+                    <select id="nueva-especialidad">
+                        <option value="">Selecciona una especialidad</option>
+                        <option value="Ingeniería de Sistemas">Ingeniería de Sistemas</option>
+                        <option value="Ingeniería Industrial">Ingeniería Industrial</option>
+                        <option value="Ingeniería Civil">Ingeniería Civil</option>
+                        <option value="Ingeniería Electrónica">Ingeniería Electrónica</option>
+                        <option value="Ingeniería Mecánica">Ingeniería Mecánica</option>
+                        <option value="Ingeniería Química">Ingeniería Química</option>
+                        <option value="Arquitectura">Arquitectura</option>
+                        <option value="Administración">Administración</option>
+                        <option value="Contabilidad">Contabilidad</option>
+                        <option value="Derecho">Derecho</option>
+                    </select>
+                    <label style="color: #666; font-size: 14px; margin-bottom: 5px; margin-top: 10px;">Año:</label>
+                    <select id="nuevo-anio">
+                        <option value="">Selecciona un año</option>
+                        <option value="1">Primero</option>
+                        <option value="2">Segundo</option>
+                        <option value="3">Tercero</option>
+                        <option value="4">Cuarto</option>
+                        <option value="5">Quinto</option>
+                    </select>
+                    <button onclick="crearEspecialidadAnio()" class="btn-primary">Continuar y Agregar Estudiante</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agregar Estudiante -->
+        <div id="agregar-estudiante-section" class="section hidden">
+            <div class="header">
+                <h1>Agregar Estudiante</h1>
+                <button onclick="showListaEstudiantes()" class="btn-secondary">← Volver</button>
+            </div>
+            <div class="container">
+                <div class="card">
+                    <p style="color: #666; margin-bottom: 15px;"><strong>Especialidad:</strong> <span id="form-especialidad"></span></p>
+                    <p style="color: #666; margin-bottom: 15px;"><strong>Año:</strong> <span id="form-anio"></span></p>
+                    <input type="text" id="est-codigo" placeholder="Código Único (ej: EST006)">
+                    <input type="text" id="est-nombre" placeholder="Nombre">
+                    <input type="text" id="est-apellido" placeholder="Apellido">
+                    <input type="email" id="est-email" placeholder="Email (opcional)">
+                    <button onclick="agregarEstudiante()" class="btn-primary">Guardar Estudiante</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generar QRs -->
+        <div id="generar-qr-section" class="section hidden">
+            <div class="header">
+                <h1>Códigos QR Generados</h1>
+                <button onclick="showListaEstudiantes()" class="btn-secondary">← Volver</button>
+            </div>
+            <div class="container">
+                <button class="btn-success" onclick="downloadAllQRs()">📥 Descargar Todos</button>
+                <div id="qr-container" class="qr-grid" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

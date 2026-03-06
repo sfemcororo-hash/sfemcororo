@@ -1,0 +1,37 @@
+# Variables de entorno
+.env
+.env.local
+.env.production
+
+# Credenciales
+credentials.json
+secrets.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backups
+*.backup
+*.bak
+backup/
+
+# Node modules (si usas build tools)
+node_modules/
+dist/
+build/
+
+# Archivos temporales
+tmp/
+temp/
+*.tmp

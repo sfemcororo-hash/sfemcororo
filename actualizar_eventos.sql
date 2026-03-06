@@ -1,0 +1,7 @@
+-- Agregar campos de rango de fechas y horas
+ALTER TABLE eventos 
+DROP COLUMN fecha,
+ADD COLUMN fecha_inicio DATE NOT NULL DEFAULT CURRENT_DATE,
+ADD COLUMN fecha_fin DATE NOT NULL DEFAULT CURRENT_DATE,
+ADD COLUMN hora_inicio TIME NOT NULL DEFAULT '08:00',
+ADD COLUMN hora_fin TIME NOT NULL DEFAULT '18:00';
