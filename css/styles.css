@@ -78,6 +78,58 @@ input {
     font-size: 16px;
 }
 
+/* Forzar formato 24 horas en campos de tiempo */
+input[type="time"] {
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+    appearance: none;
+}
+
+input[type="time"]::-webkit-datetime-edit-ampm-field {
+    display: none !important;
+}
+
+input[type="time"]::-webkit-inner-spin-button {
+    display: none;
+}
+
+input[type="time"]::-webkit-clear-button {
+    display: none;
+}
+
+input[type="time"]::-webkit-datetime-edit {
+    color: #333;
+}
+
+input[type="time"]::-webkit-datetime-edit-fields-wrapper {
+    background: transparent;
+}
+
+input[type="time"]::-webkit-datetime-edit-text {
+    color: #333;
+    padding: 0 1px;
+}
+
+input[type="time"]::-webkit-datetime-edit-month-field {
+    color: #333;
+}
+
+input[type="time"]::-webkit-datetime-edit-day-field {
+    color: #333;
+}
+
+input[type="time"]::-webkit-datetime-edit-year-field {
+    color: #333;
+}
+
+input[type="time"]::-webkit-datetime-edit-hour-field {
+    color: #333;
+}
+
+input[type="time"]::-webkit-datetime-edit-minute-field {
+    color: #333;
+}
+
 select {
     width: 100%;
     padding: 12px;

@@ -147,7 +147,6 @@ async function crearEvento() {
     const fechaFin = document.getElementById('evento-fecha-fin').value;
     const horaInicio = document.getElementById('evento-hora-inicio').value;
     const horaFin = document.getElementById('evento-hora-fin').value;
-    const imagenFile = document.getElementById('evento-imagen').files[0];
 
     if (!nombre || !fechaInicio || !fechaFin || !horaInicio || !horaFin) {
         alert('Completa todos los campos obligatorios');
@@ -164,26 +163,13 @@ async function crearEvento() {
         return;
     }
 
-    let imagenUrl = null;
-
-    if (imagenFile) {
-        const fileName = `${Date.now()}_${imagenFile.name}`;
-        const { data, error } = await supabase.storage
-            .from('eventos')
-            .upload(fileName, imagenFile);
-
-        if (!error) {
-            imagenUrl = supabase.storage.from('eventos').getPublicUrl(fileName).data.publicUrl;
-        }
-    }
-
     await supabase.from('eventos').insert({
         nombre,
         fecha_inicio: fechaInicio,
         fecha_fin: fechaFin,
         hora_inicio: horaInicio,
         hora_fin: horaFin,
-        imagen_url: imagenUrl,
+        imagen_url: null,
         usuario_id: currentUser.id,
         activo: true
     });
@@ -193,7 +179,6 @@ async function crearEvento() {
     document.getElementById('evento-fecha-fin').value = '';
     document.getElementById('evento-hora-inicio').value = '08:00';
     document.getElementById('evento-hora-fin').value = '18:00';
-    document.getElementById('evento-imagen').value = '';
 
     showAsistenciaModule();
 }
@@ -552,7 +537,8 @@ async function loadAsistencias(eventoId) {
             minute: '2-digit',
             day: '2-digit',
             month: '2-digit',
-            year: 'numeric'
+            year: 'numeric',
+            hour12: false
         });
         item.innerHTML = `
             <div style="width: 100%;">
@@ -947,7 +933,15 @@ async function verListaAsistencias(eventoId, eventoNombre) {
         `;
         
         result.rows.forEach(asistencia => {
-            const fecha = new Date(asistencia.timestamp).toLocaleString('es-BO');
+            const fecha = new Date(asistencia.timestamp).toLocaleString('es-BO', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
             const nombreCompleto = `${asistencia.nombre} ${asistencia.apellido_paterno} ${asistencia.apellido_materno || ''}`;
             
             tableHTML += `
@@ -1002,7 +996,15 @@ async function exportarAsistenciasExcel() {
         
         // Preparar datos para Excel (reordenando columnas)
         const excelData = result.rows.map(asistencia => {
-            const fecha = new Date(asistencia.timestamp).toLocaleString('es-BO');
+            const fecha = new Date(asistencia.timestamp).toLocaleString('es-BO', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
             const nombreCompleto = `${asistencia.nombre} ${asistencia.apellido_paterno} ${asistencia.apellido_materno || ''}`;
             
             return {
@@ -1023,7 +1025,15 @@ async function exportarAsistenciasExcel() {
         // Crear datos con título
         const wsData = [
             [`REPORTE DE ASISTENCIAS - ${currentEventoNombre.toUpperCase()}`],
-            [`Fecha de generación: ${new Date().toLocaleDateString('es-BO')}`],
+            [`Fecha de generación: ${new Date().toLocaleDateString('es-BO', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            })} ${new Date().toLocaleTimeString('es-BO', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            })}`],
             [`Total de asistencias: ${result.rows.length}`],
             [], // Fila vacía
             // Encabezados
