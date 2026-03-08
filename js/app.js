@@ -1547,17 +1547,10 @@ async function loadEstudiantes() {
             headerDiv.innerHTML = `
                 <span>📅 Año ${anio} (${estudiantes.length} estudiantes)</span>
                 <div>
-                    <button class="btn-primary" style="padding: 5px 10px; font-size: 12px; margin-right: 5px;">+ Agregar</button>
                     <button class="btn-success" style="padding: 5px 10px; font-size: 12px;">📥 QRs</button>
                     <span style="margin-left: 10px;">▼</span>
                 </div>
             `;
-            
-            const btnAgregar = headerDiv.querySelector('.btn-primary');
-            btnAgregar.onclick = function(e) {
-                e.stopPropagation();
-                agregarEstudianteA(especialidad, anio);
-            };
             
             const btnQRs = headerDiv.querySelector('.btn-success');
             btnQRs.onclick = function(e) {
