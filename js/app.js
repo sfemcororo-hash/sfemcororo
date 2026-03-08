@@ -506,8 +506,6 @@ function showDashboard() {
     const user = JSON.parse(localStorage.getItem('currentUser'));
     if (user) {
         document.getElementById('user-display-name').textContent = user.nombre;
-        document.getElementById('dropdown-nombre').textContent = user.nombre;
-        document.getElementById('dropdown-ci').textContent = user.ci;
         document.getElementById('dropdown-rol').textContent = user.rol.toUpperCase();
     }
 }
