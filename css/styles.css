@@ -44,6 +44,16 @@ body {
     z-index: 100;
 }
 
+.header h1 {
+    font-size: 24px;
+}
+
+@media (max-width: 768px) {
+    .header h1 {
+        font-size: 16px;
+    }
+}
+
 .header-right {
     display: flex;
     align-items: center;
@@ -354,6 +364,9 @@ button {
     .evento-card { flex-direction: column; gap: 10px; }
     .btn-asistencia { width: 100%; }
     .header { flex-direction: column; gap: 10px; }
+    .header h1 {
+        font-size: 16px;
+    }
 }
 
 .accordion {
