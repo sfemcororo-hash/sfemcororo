@@ -16,10 +16,10 @@ let currentEventoNombre = null;
 
 // ========== SISTEMA ADAPTATIVO DE LATENCIA ==========
 
-// Umbrales calculados basados en datos reales de 35 registros
-const OPTIMAL_RESPONSE_TIME = 3.7; // segundos - tiempo promedio óptimo
-const CRITICAL_THRESHOLD = 5.0;    // segundos - umbral crítico ajustado
-const OFFLINE_THRESHOLD = 6.2;     // segundos - umbral más agresivo para red lenta
+// Umbrales optimizados basados en pruebas reales (2G + WiFi)
+const OPTIMAL_RESPONSE_TIME = 3.0; // segundos - tiempo óptimo ajustado
+const CRITICAL_THRESHOLD = 4.5;    // segundos - umbral crítico balanceado
+const OFFLINE_THRESHOLD = 5.5;     // segundos - activar modo offline
 
 // Variables de control de latencia
 let latencyHistory = [];
