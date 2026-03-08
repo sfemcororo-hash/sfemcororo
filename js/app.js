@@ -47,17 +47,18 @@ function evaluateNetworkCondition(latency) {
     
     if (latency > OFFLINE_THRESHOLD) {
         consecutiveSlowRequests++;
-        console.log(`🐌 Latencia crítica detectada: ${latency.toFixed(1)}s (${consecutiveSlowRequests}/3)`);
+        console.log(`🐌 Latencia crítica detectada: ${latency.toFixed(1)}s (${consecutiveSlowRequests}/2)`);
         
-        if (consecutiveSlowRequests >= 3) {
+        // CAMBIO: Solo 2 requests lentos (más agresivo)
+        if (consecutiveSlowRequests >= 2) {
             activateAdaptiveOfflineMode();
             return true; // Usar offline
         }
     } else if (latency <= OPTIMAL_RESPONSE_TIME) {
         // Red estable - resetear contadores
         consecutiveSlowRequests = 0;
-        if (isAdaptiveOfflineMode && latencyHistory.length >= 3) {
-            const avgRecent = latencyHistory.slice(-3).reduce((a, b) => a + b) / 3;
+        if (isAdaptiveOfflineMode && latencyHistory.length >= 2) {
+            const avgRecent = latencyHistory.slice(-2).reduce((a, b) => a + b) / 2;
             if (avgRecent <= CRITICAL_THRESHOLD) {
                 deactivateAdaptiveOfflineMode();
             }
@@ -130,7 +131,7 @@ function startAdaptiveSync() {
         } catch (error) {
             console.log('🔄 Red aún inestable, manteniendo modo offline');
         }
-    }, 10000); // Cada 10 segundos en modo adaptativo
+    }, 8000); // Cada 8 segundos en modo adaptativo (más frecuente)
 }
 
 // Mostrar estadísticas de latencia en consola
@@ -1238,6 +1239,9 @@ async function onScanSuccess(codigoUnico) {
         // Decidir si usar online u offline basado en latencia
         const useOfflineMode = isAdaptiveOfflineMode || evaluateNetworkCondition(measureLatency(requestStart));
         
+        // OPTIMIZACIÓN: Timeout más agresivo para detectar problemas rápido
+        const NETWORK_TIMEOUT = 4000; // 4 segundos máximo
+        
         if (useOfflineMode) {
             // Modo offline - guardar en cola
             const agregado = addToOfflineQueue(estudiante.id, currentEventId);
@@ -1249,26 +1253,21 @@ async function onScanSuccess(codigoUnico) {
                 showMessage('Asistencia ya registrada (en cola offline)', 'warning');
             }
         } else {
-            // Modo online - intentar guardar directamente
+            // Modo online - intentar guardar directamente con timeout
             try {
                 const insertStart = Date.now();
                 
-                // Verificar duplicados en servidor
-                const { data: existeEnBD } = await tursodb.query(`
-                    SELECT id FROM asistencias 
-                    WHERE estudiante_id = ? AND evento_id = ?
-                `, [estudiante.id, currentEventId]);
-                
-                if (existeEnBD && existeEnBD.length > 0) {
-                    showMessage('Asistencia ya registrada', 'warning');
-                    setTimeout(() => { isScanning = false; }, 2000);
-                    return;
-                }
-                
-                const { error: insertError } = await tursodb.from('asistencias').insert({
+                // Promise con timeout para evitar esperas largas
+                const insertPromise = tursodb.from('asistencias').insert({
                     estudiante_id: estudiante.id,
                     evento_id: currentEventId
                 });
+                
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout')), NETWORK_TIMEOUT)
+                );
+                
+                const { error: insertError } = await Promise.race([insertPromise, timeoutPromise]);
                 
                 // Medir latencia de inserción
                 const insertLatency = measureLatency(insertStart);
@@ -1283,13 +1282,16 @@ async function onScanSuccess(codigoUnico) {
                     throw new Error('Error de base de datos');
                 }
             } catch (networkError) {
-                // Fallo online - cambiar a offline
-                console.log('Fallo en modo online, cambiando a offline');
+                // Fallo online - cambiar a offline inmediatamente
+                console.log('Fallo en modo online, cambiando a offline:', networkError.message);
                 const agregado = addToOfflineQueue(estudiante.id, currentEventId);
                 
                 if (agregado) {
-                    showMessage(`📱 ${formatearNombreCompleto(estudiante.nombre, estudiante.apellido_paterno, estudiante.apellido_materno)} - Guardado offline`, 'success');
+                    showMessage(`📱 ${formatearNombreCompleto(estudiante.nombre, estudiante.apellido_paterno, estudiante.apellido_materno)} - Guardado offline (red lenta)`, 'success');
                     addToLocalAsistenciasList(estudiante);
+                    
+                    // Activar modo offline inmediatamente después de un fallo
+                    activateAdaptiveOfflineMode();
                 } else {
                     showMessage('Error guardando asistencia', 'error');
                 }
