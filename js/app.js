@@ -20,6 +20,48 @@ let syncInProgress = false;
 let lastSyncTime = 0;
 const SYNC_INTERVAL = 30000; // 30 segundos
 const MAX_BATCH_SIZE = 10; // Máximo 10 asistencias por lote
+let estudiantesCache = []; // Cache local de estudiantes
+
+// Cargar cache de estudiantes desde localStorage
+function loadEstudiantesCache() {
+    try {
+        const saved = localStorage.getItem('estudiantes_cache');
+        estudiantesCache = saved ? JSON.parse(saved) : [];
+        console.log(`Cache de estudiantes cargado: ${estudiantesCache.length} estudiantes`);
+    } catch (error) {
+        console.error('Error cargando cache de estudiantes:', error);
+        estudiantesCache = [];
+    }
+}
+
+// Guardar cache de estudiantes en localStorage
+function saveEstudiantesCache() {
+    try {
+        localStorage.setItem('estudiantes_cache', JSON.stringify(estudiantesCache));
+        console.log(`Cache de estudiantes guardado: ${estudiantesCache.length} estudiantes`);
+    } catch (error) {
+        console.error('Error guardando cache de estudiantes:', error);
+    }
+}
+
+// Actualizar cache de estudiantes
+async function updateEstudiantesCache() {
+    try {
+        const { data, error } = await tursodb.from('estudiantes').select('*');
+        if (!error && data) {
+            estudiantesCache = data;
+            saveEstudiantesCache();
+            console.log(`Cache actualizado con ${data.length} estudiantes`);
+        }
+    } catch (error) {
+        console.log('No se pudo actualizar cache de estudiantes (sin conexión)');
+    }
+}
+
+// Buscar estudiante en cache local
+function findEstudianteInCache(codigoUnico) {
+    return estudiantesCache.find(est => est.codigo_unico === codigoUnico);
+}
 
 // Cargar cola offline desde localStorage
 function loadOfflineQueue() {
@@ -562,6 +604,8 @@ function showScanner(eventoId, eventoNombre) {
     
     validarEventoActivo(eventoId).then(esValido => {
         if (esValido) {
+            // Actualizar cache de estudiantes antes de iniciar el escáner
+            updateEstudiantesCache();
             startScanner();
             loadAsistencias(eventoId);
             iniciarMonitoreoEvento(eventoId);
@@ -892,17 +936,26 @@ async function onScanSuccess(codigoUnico) {
     isScanning = true;
 
     try {
-        const { data: estudiante, error: estudianteError } = await tursodb
-            .from('estudiantes')
-            .select('*')
-            .eq('codigo_unico', codigoUnico)
-            .maybeSingle();
-
-        if (estudianteError) {
-            console.error('Error buscando estudiante:', estudianteError);
-            showMessage('Error al buscar estudiante', 'error');
-            setTimeout(() => { isScanning = false; }, 2000);
-            return;
+        let estudiante = null;
+        
+        // Intentar buscar en base de datos primero
+        try {
+            const { data, error } = await tursodb
+                .from('estudiantes')
+                .select('*')
+                .eq('codigo_unico', codigoUnico)
+                .maybeSingle();
+            
+            if (!error && data) {
+                estudiante = data;
+            }
+        } catch (networkError) {
+            console.log('Sin conexión, buscando en cache local...');
+        }
+        
+        // Si no se encontró en BD o no hay conexión, buscar en cache
+        if (!estudiante) {
+            estudiante = findEstudianteInCache(codigoUnico);
         }
 
         if (!estudiante) {
@@ -1070,7 +1123,11 @@ function addToLocalAsistenciasList(estudiante) {
 // Inicializar sistema offline al cargar la página
 window.addEventListener('DOMContentLoaded', function() {
     loadOfflineQueue();
+    loadEstudiantesCache();
     startAutoSync();
+    
+    // Actualizar cache de estudiantes al iniciar (si hay conexión)
+    updateEstudiantesCache();
 });
 
 function formatearCampoOpcional(valor, valorPorDefecto = '') {
