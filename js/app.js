@@ -1866,14 +1866,12 @@ async function verListaAsistencias(eventoId, eventoNombre) {
                 e.nombre,
                 e.apellido_paterno,
                 e.apellido_materno,
-                e.celular,
-                e.email,
                 e.especialidad,
                 e.anio_formacion
             FROM asistencias a
             JOIN estudiantes e ON a.estudiante_id = e.id
             WHERE a.evento_id = ?
-            ORDER BY a.timestamp DESC
+            ORDER BY e.especialidad, e.anio_formacion, e.codigo_unico
         `, [eventoId]);
         
         if (!result.rows || result.rows.length === 0) {
@@ -1881,49 +1879,78 @@ async function verListaAsistencias(eventoId, eventoNombre) {
             return;
         }
         
-        // Crear tabla
-        let tableHTML = `
-            <h3>Total de asistencias: ${result.rows.length}</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Código</th>
-                        <th>DNI</th>
-                        <th>Nombre Completo</th>
-                        <th>Especialidad</th>
-                        <th>Año</th>
-                        <th>Fecha/Hora</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
+        // Agrupar por especialidad y año
+        const grouped = {};
         result.rows.forEach(asistencia => {
-            const fecha = new Date(asistencia.timestamp).toLocaleString('es-BO', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
-            });
-            const nombreCompleto = formatearNombreCompleto(asistencia.nombre, asistencia.apellido_paterno, asistencia.apellido_materno);
-            
-            tableHTML += `
-                <tr>
-                    <td>${asistencia.codigo_unico}</td>
-                    <td>${formatearCampoOpcional(asistencia.dni, 'N/A')}</td>
-                    <td>${nombreCompleto}</td>
-                    <td>${formatearCampoOpcional(asistencia.especialidad, 'N/A')}</td>
-                    <td>${formatearCampoOpcional(asistencia.anio_formacion, 'N/A')}</td>
-                    <td>${fecha}</td>
-                </tr>
-            `;
+            const esp = asistencia.especialidad || 'Sin Especialidad';
+            const anio = asistencia.anio_formacion || 'Sin Año';
+            if (!grouped[esp]) grouped[esp] = {};
+            if (!grouped[esp][anio]) grouped[esp][anio] = [];
+            grouped[esp][anio].push(asistencia);
         });
         
-        tableHTML += '</tbody></table>';
-        listEl.innerHTML = tableHTML;
+        // Crear estructura de acordeón
+        let html = `<h3>Total de asistencias: ${result.rows.length}</h3>`;
+        
+        Object.keys(grouped).sort().forEach(especialidad => {
+            const totalEsp = Object.values(grouped[especialidad]).flat().length;
+            const espId = especialidad.replace(/\s/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+            
+            html += `
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>🎓 ${especialidad} (${totalEsp} asistencias)</span>
+                        <span>▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div id="anios-${espId}">`;
+            
+            Object.keys(grouped[especialidad]).sort((a, b) => {
+                const orden = ['PRIMERO', 'SEGUNDO', 'TERCERO', 'CUARTO', 'QUINTO'];
+                return orden.indexOf(a) - orden.indexOf(b);
+            }).forEach(anio => {
+                const asistencias = grouped[especialidad][anio];
+                
+                html += `
+                    <div class="sub-accordion">
+                        <div class="sub-accordion-header" onclick="toggleSubAccordion(this)">
+                            <span>📅 Año ${anio} (${asistencias.length} asistencias)</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="sub-accordion-content">`;
+                
+                asistencias.forEach(asistencia => {
+                    const fecha = new Date(asistencia.timestamp).toLocaleString('es-BO', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    });
+                    const nombreCompleto = formatearNombreCompleto(asistencia.nombre, asistencia.apellido_paterno, asistencia.apellido_materno);
+                    
+                    html += `
+                        <div class="estudiante-item">
+                            <div>
+                                <strong>${nombreCompleto}</strong><br>
+                                <small>📋 ${asistencia.codigo_unico} | 🆔 ${formatearCampoOpcional(asistencia.dni, 'Sin DNI')} | 🕒 ${fecha}</small>
+                            </div>
+                        </div>`;
+                });
+                
+                html += `
+                        </div>
+                    </div>`;
+            });
+            
+            html += `
+                        </div>
+                    </div>
+                </div>`;
+        });
+        
+        listEl.innerHTML = html;
         
     } catch (error) {
         console.error('Error cargando asistencias:', error);
