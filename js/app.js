@@ -2493,3 +2493,128 @@ window.showEditarUsuario = function(id) {
 window.addEventListener('DOMContentLoaded', async function() {
     await tursodb.initializeData();
 });
+
+
+function showGestionEstudiantesCompleto() {
+    hideAllSections();
+    document.getElementById('estudiantes-section').classList.add('active');
+    updateAllUserDropdowns();
+    loadEstudiantesConEdicion();
+}
+
+async function loadEstudiantesConEdicion() {
+    const container = document.getElementById('especialidades-accordion');
+    container.innerHTML = '<p style="color: white;">Cargando...</p>';
+
+    const result = await tursodb.query(`SELECT * FROM estudiantes ORDER BY especialidad, anio_formacion, codigo_unico`);
+    
+    if (!result.rows || result.rows.length === 0) {
+        container.innerHTML = '<p style="color: white;">No hay estudiantes. Usa la carga masiva para importar desde Excel.</p>';
+        return;
+    }
+
+    const data = result.rows;
+    data.sort((a, b) => {
+        if (a.especialidad !== b.especialidad) return a.especialidad.localeCompare(b.especialidad);
+        if (a.anio_formacion !== b.anio_formacion) {
+            const orden = ['PRIMERO', 'SEGUNDO', 'TERCERO', 'CUARTO', 'QUINTO'];
+            return orden.indexOf(a.anio_formacion) - orden.indexOf(b.anio_formacion);
+        }
+        return a.codigo_unico.localeCompare(b.codigo_unico);
+    });
+
+    const grouped = {};
+    data.forEach(est => {
+        const esp = est.especialidad || 'Sin Especialidad';
+        const anio = est.anio_formacion || 'Sin Año';
+        if (!grouped[esp]) grouped[esp] = {};
+        if (!grouped[esp][anio]) grouped[esp][anio] = [];
+        grouped[esp][anio].push(est);
+    });
+
+    container.innerHTML = '';
+    
+    Object.keys(grouped).sort().forEach(especialidad => {
+        const accordion = document.createElement('div');
+        accordion.className = 'accordion';
+        
+        const totalEst = Object.values(grouped[especialidad]).flat().length;
+        const espId = especialidad.replace(/\s/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+        
+        accordion.innerHTML = `
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <span>🎓 ${especialidad} (${totalEst} estudiantes)</span>
+                <span>▼</span>
+            </div>
+            <div class="accordion-content">
+                <div id="anios-${espId}"></div>
+            </div>
+        `;
+        container.appendChild(accordion);
+
+        const aniosContainer = accordion.querySelector(`#anios-${espId}`);
+        Object.keys(grouped[especialidad]).sort((a, b) => {
+            const orden = ['PRIMERO', 'SEGUNDO', 'TERCERO', 'CUARTO', 'QUINTO'];
+            return orden.indexOf(a) - orden.indexOf(b);
+        }).forEach(anio => {
+            const subAccordion = document.createElement('div');
+            subAccordion.className = 'sub-accordion';
+            
+            const estudiantes = grouped[especialidad][anio];
+            
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'sub-accordion-header';
+            headerDiv.onclick = function() { toggleSubAccordion(this); };
+            
+            headerDiv.innerHTML = `
+                <span>📅 Año ${anio} (${estudiantes.length} estudiantes)</span>
+                <div>
+                    <button class="btn-primary" style="padding: 5px 10px; font-size: 12px; margin-right: 5px;">+ Agregar</button>
+                    <span style="margin-left: 10px;">▼</span>
+                </div>
+            `;
+            
+            const btnAgregar = headerDiv.querySelector('.btn-primary');
+            btnAgregar.onclick = function(e) {
+                e.stopPropagation();
+                agregarEstudianteA(especialidad, anio);
+            };
+            
+            subAccordion.appendChild(headerDiv);
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'sub-accordion-content';
+            contentDiv.innerHTML = estudiantes.map(est => `
+                <div class="estudiante-item">
+                    <div>
+                        <strong>${formatearNombreCompleto(est.nombre, est.apellido_paterno, est.apellido_materno)}</strong><br>
+                        <small>📋 ${est.codigo_unico} | 🆔 ${formatearCampoOpcional(est.dni, 'Sin DNI')} | 📱 ${formatearCampoOpcional(est.celular, 'Sin celular')}</small>
+                    </div>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="btn-info" style="padding: 5px 10px; font-size: 11px;" onclick="editarEstudiante('${est.id}')">✏️</button>
+                        <button class="btn-danger" style="padding: 5px 10px; font-size: 11px;" onclick="eliminarEstudiante('${est.id}', '${formatearNombreCompleto(est.nombre, est.apellido_paterno, est.apellido_materno).replace(/'/g, "\\'")}')">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+            
+            subAccordion.appendChild(contentDiv);
+            aniosContainer.appendChild(subAccordion);
+        });
+    });
+}
+
+async function eliminarEstudiante(estudianteId, nombreCompleto) {
+    if (!confirm(`¿Eliminar a ${nombreCompleto}?\n\nEsta acción no se puede deshacer.`)) return;
+    
+    try {
+        await tursodb.query('DELETE FROM estudiantes WHERE id = ?', [estudianteId]);
+        alert('Estudiante eliminado correctamente');
+        loadEstudiantesConEdicion();
+    } catch (error) {
+        alert('Error al eliminar: ' + error.message);
+    }
+}
+
+async function editarEstudiante(estudianteId) {
+    alert('Función de edición en desarrollo');
+}

@@ -327,13 +327,18 @@
 
                     <div class="module-card" onclick="showListaUsuarios()">
                         <div class="module-icon">👨‍🏫</div>
-                        <h3>Lista de Usuarios</h3>
+                        <h3>Usuarios</h3>
                         <p>Ver, editar y eliminar usuarios del sistema</p>
                     </div>
                     <div class="module-card" onclick="showCargaMasiva()">
                         <div class="module-icon">📄</div>
-                        <h3>Carga Masiva</h3>
+                        <h3>Carga Masiva Estudiantes</h3>
                         <p>Subir estudiantes desde archivo Excel</p>
+                    </div>
+                    <div class="module-card" onclick="showGestionEstudiantesCompleto()">
+                        <div class="module-icon">🎓</div>
+                        <h3>Estudiantes</h3>
+                        <p>Gestionar estudiantes por especialidad y año</p>
                     </div>
                 </div>
             </div>
@@ -450,7 +455,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="js/tursodb.js?v=2026030826"></script>
+    <script src="js/tursodb.js?v=2026030827"></script>
     <script>
         // Máscara para formato 24 horas en campos de hora
         document.addEventListener('DOMContentLoaded', function() {
@@ -489,6 +494,6 @@
             });
         });
     </script>
-    <script src="js/app.js?v=2026030826"></script>
+    <script src="js/app.js?v=2026030827"></script>
 </body>
 </html>
