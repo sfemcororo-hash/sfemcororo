@@ -1887,14 +1887,12 @@ async function verListaAsistencias(eventoId, eventoNombre) {
             <table>
                 <thead>
                     <tr>
-                        <th>Fecha/Hora</th>
                         <th>Código</th>
                         <th>DNI</th>
                         <th>Nombre Completo</th>
-                        <th>Celular</th>
-                        <th>Email</th>
                         <th>Especialidad</th>
                         <th>Año</th>
+                        <th>Fecha/Hora</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1914,14 +1912,12 @@ async function verListaAsistencias(eventoId, eventoNombre) {
             
             tableHTML += `
                 <tr>
-                    <td>${fecha}</td>
                     <td>${asistencia.codigo_unico}</td>
                     <td>${formatearCampoOpcional(asistencia.dni, 'N/A')}</td>
                     <td>${nombreCompleto}</td>
-                    <td>${formatearCampoOpcional(asistencia.celular, 'N/A')}</td>
-                    <td>${formatearCampoOpcional(asistencia.email, 'N/A')}</td>
                     <td>${formatearCampoOpcional(asistencia.especialidad, 'N/A')}</td>
                     <td>${formatearCampoOpcional(asistencia.anio_formacion, 'N/A')}</td>
+                    <td>${fecha}</td>
                 </tr>
             `;
         });
@@ -1982,7 +1978,7 @@ async function exportarAsistenciasExcel() {
             return;
         }
         
-        // Preparar datos para Excel (reordenando columnas)
+        // Preparar datos para Excel (sin celular y email)
         const excelData = result.rows.map(asistencia => {
             const fecha = new Date(asistencia.timestamp).toLocaleString('es-BO', {
                 year: 'numeric',
@@ -1999,8 +1995,6 @@ async function exportarAsistenciasExcel() {
                 'Código': asistencia.codigo_unico,
                 'CI': formatearCampoOpcional(asistencia.dni, 'N/A'),
                 'Nombre Completo': nombreCompleto,
-                'Celular': formatearCampoOpcional(asistencia.celular, 'N/A'),
-                'Email': formatearCampoOpcional(asistencia.email, 'N/A'),
                 'Especialidad': formatearCampoOpcional(asistencia.especialidad, 'N/A'),
                 'Año': formatearCampoOpcional(asistencia.anio_formacion, 'N/A'),
                 'Fecha/Hora Registro': fecha
@@ -2025,7 +2019,7 @@ async function exportarAsistenciasExcel() {
             [`Total de asistencias: ${result.rows.length}`],
             [], // Fila vacía
             // Encabezados
-            ['Código', 'CI', 'Nombre Completo', 'Celular', 'Email', 'Especialidad', 'Año', 'Fecha/Hora Registro']
+            ['Código', 'CI', 'Nombre Completo', 'Especialidad', 'Año', 'Fecha/Hora Registro']
         ];
         
         // Agregar datos de asistencias
@@ -2034,8 +2028,6 @@ async function exportarAsistenciasExcel() {
                 row['Código'],
                 row['CI'],
                 row['Nombre Completo'],
-                row['Celular'],
-                row['Email'],
                 row['Especialidad'],
                 row['Año'],
                 row['Fecha/Hora Registro']
@@ -2050,8 +2042,6 @@ async function exportarAsistenciasExcel() {
             { wch: 12 }, // Código
             { wch: 12 }, // CI
             { wch: 25 }, // Nombre Completo
-            { wch: 15 }, // Celular
-            { wch: 25 }, // Email
             { wch: 20 }, // Especialidad
             { wch: 8 },  // Año
             { wch: 20 }  // Fecha/Hora Registro
@@ -2060,9 +2050,9 @@ async function exportarAsistenciasExcel() {
         
         // Fusionar celdas para el título
         ws['!merges'] = [
-            { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }, // Título
-            { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } }, // Fecha generación
-            { s: { r: 2, c: 0 }, e: { r: 2, c: 7 } }  // Total asistencias
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }, // Título
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } }, // Fecha generación
+            { s: { r: 2, c: 0 }, e: { r: 2, c: 5 } }  // Total asistencias
         ];
         
         // Agregar hoja al libro
