@@ -1982,7 +1982,12 @@ async function exportarAsistenciasExcel() {
     if (!currentEventoId) return;
     
     try {
-        const result = await tursodb.query(`
+        // Obtener datos del evento
+        const evento = await tursodb.query(`SELECT * FROM eventos WHERE id = ?`, [currentEventoId]);
+        const eventoData = evento.rows[0];
+        
+        // Obtener todas las asistencias del evento
+        const asistenciasResult = await tursodb.query(`
             SELECT 
                 a.timestamp,
                 e.codigo_unico,
@@ -1990,108 +1995,150 @@ async function exportarAsistenciasExcel() {
                 e.nombre,
                 e.apellido_paterno,
                 e.apellido_materno,
-                e.celular,
-                e.email,
                 e.especialidad,
                 e.anio_formacion
             FROM asistencias a
             JOIN estudiantes e ON a.estudiante_id = e.id
             WHERE a.evento_id = ?
-            ORDER BY a.timestamp DESC
+            ORDER BY e.especialidad, e.anio_formacion, e.codigo_unico
         `, [currentEventoId]);
         
-        if (!result.rows || result.rows.length === 0) {
-            alert('No hay asistencias para exportar.');
+        // Obtener TODOS los estudiantes de la BD
+        const todosEstudiantesResult = await tursodb.query(`
+            SELECT codigo_unico, dni, nombre, apellido_paterno, apellido_materno, especialidad, anio_formacion
+            FROM estudiantes 
+            ORDER BY especialidad, anio_formacion, codigo_unico
+        `);
+        
+        if (!todosEstudiantesResult.rows || todosEstudiantesResult.rows.length === 0) {
+            alert('No hay estudiantes en la base de datos.');
             return;
         }
         
-        // Preparar datos para Excel (sin celular y email)
-        const excelData = result.rows.map(asistencia => {
-            const fecha = new Date(asistencia.timestamp).toLocaleString('es-BO', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
+        // Crear mapa de asistencias
+        const asistenciasMap = new Map();
+        if (asistenciasResult.rows) {
+            asistenciasResult.rows.forEach(asistencia => {
+                asistenciasMap.set(asistencia.codigo_unico, asistencia);
             });
-            const nombreCompleto = formatearNombreCompleto(asistencia.nombre, asistencia.apellido_paterno, asistencia.apellido_materno);
+        }
+        
+        // Calcular límites de tiempo del evento
+        const fechaFin = new Date(`${eventoData.fecha_fin}T${eventoData.hora_fin}`);
+        
+        // Agrupar estudiantes por especialidad
+        const estudiantesPorEspecialidad = {};
+        todosEstudiantesResult.rows.forEach(estudiante => {
+            const esp = estudiante.especialidad || 'Sin Especialidad';
+            if (!estudiantesPorEspecialidad[esp]) estudiantesPorEspecialidad[esp] = [];
             
-            return {
-                'Código': asistencia.codigo_unico,
-                'CI': formatearCampoOpcional(asistencia.dni, 'N/A'),
+            const asistencia = asistenciasMap.get(estudiante.codigo_unico);
+            let estado = 'FALTÓ';
+            
+            if (asistencia) {
+                const fechaAsistencia = new Date(asistencia.timestamp);
+                estado = fechaAsistencia <= fechaFin ? 'ASISTIÓ' : 'RETRASO';
+            }
+            
+            const nombreCompleto = formatearNombreCompleto(estudiante.nombre, estudiante.apellido_paterno, estudiante.apellido_materno);
+            
+            estudiantesPorEspecialidad[esp].push({
+                'Código': estudiante.codigo_unico,
+                'CI': formatearCampoOpcional(estudiante.dni, 'N/A'),
                 'Nombre Completo': nombreCompleto,
-                'Especialidad': formatearCampoOpcional(asistencia.especialidad, 'N/A'),
-                'Año': formatearCampoOpcional(asistencia.anio_formacion, 'N/A'),
-                'Fecha/Hora Registro': fecha
-            };
+                'Año': formatearCampoOpcional(estudiante.anio_formacion, 'N/A'),
+                'Estado': estado,
+                'Fecha/Hora Registro': asistencia ? new Date(asistencia.timestamp).toLocaleString('es-BO', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }) : 'N/A'
+            });
         });
         
         // Crear libro de Excel
         const wb = XLSX.utils.book_new();
         
-        // Crear datos con título
-        const wsData = [
-            [`REPORTE DE ASISTENCIAS - ${currentEventoNombre.toUpperCase()}`],
-            [`Fecha de generación: ${new Date().toLocaleDateString('es-BO', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-            })} ${new Date().toLocaleTimeString('es-BO', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            })}`],
-            [`Total de asistencias: ${result.rows.length}`],
-            [], // Fila vacía
-            // Encabezados
-            ['Código', 'CI', 'Nombre Completo', 'Especialidad', 'Año', 'Fecha/Hora Registro']
-        ];
-        
-        // Agregar datos de asistencias
-        excelData.forEach(row => {
-            wsData.push([
-                row['Código'],
-                row['CI'],
-                row['Nombre Completo'],
-                row['Especialidad'],
-                row['Año'],
-                row['Fecha/Hora Registro']
-            ]);
+        // Crear hoja por cada especialidad
+        Object.keys(estudiantesPorEspecialidad).sort().forEach(especialidad => {
+            const estudiantes = estudiantesPorEspecialidad[especialidad];
+            
+            // Ordenar por año y luego por código
+            estudiantes.sort((a, b) => {
+                const orden = ['PRIMERO', 'SEGUNDO', 'TERCERO', 'CUARTO', 'QUINTO'];
+                const ordenA = orden.indexOf(a['Año']);
+                const ordenB = orden.indexOf(b['Año']);
+                if (ordenA !== ordenB) return ordenA - ordenB;
+                return a['Código'].localeCompare(b['Código']);
+            });
+            
+            // Contar estados
+            const asistieron = estudiantes.filter(e => e.Estado === 'ASISTIÓ').length;
+            const faltaron = estudiantes.filter(e => e.Estado === 'FALTÓ').length;
+            const retrasos = estudiantes.filter(e => e.Estado === 'RETRASO').length;
+            
+            // Crear datos con título
+            const wsData = [
+                [`REPORTE DE ASISTENCIAS - ${currentEventoNombre.toUpperCase()}`],
+                [`ESPECIALIDAD: ${especialidad.toUpperCase()}`],
+                [`Fecha: ${new Date().toLocaleDateString('es-BO')} | Total: ${estudiantes.length} | Asistieron: ${asistieron} | Faltaron: ${faltaron} | Retrasos: ${retrasos}`],
+                [], // Fila vacía
+                // Encabezados
+                ['Código', 'CI', 'Nombre Completo', 'Año', 'Estado', 'Fecha/Hora Registro']
+            ];
+            
+            // Agregar datos de estudiantes
+            estudiantes.forEach(estudiante => {
+                wsData.push([
+                    estudiante['Código'],
+                    estudiante['CI'],
+                    estudiante['Nombre Completo'],
+                    estudiante['Año'],
+                    estudiante['Estado'],
+                    estudiante['Fecha/Hora Registro']
+                ]);
+            });
+            
+            // Crear hoja de trabajo
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            
+            // Ajustar ancho de columnas
+            const colWidths = [
+                { wch: 12 }, // Código
+                { wch: 12 }, // CI
+                { wch: 25 }, // Nombre Completo
+                { wch: 8 },  // Año
+                { wch: 10 }, // Estado
+                { wch: 20 }  // Fecha/Hora Registro
+            ];
+            ws['!cols'] = colWidths;
+            
+            // Fusionar celdas para el título
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }, // Título
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } }, // Especialidad
+                { s: { r: 2, c: 0 }, e: { r: 2, c: 5 } }  // Estadísticas
+            ];
+            
+            // Nombre de hoja (máximo 31 caracteres)
+            let nombreHoja = especialidad.replace(/[^a-zA-Z0-9\s]/g, '').substring(0, 31);
+            if (nombreHoja.length === 0) nombreHoja = 'Especialidad';
+            
+            // Agregar hoja al libro
+            XLSX.utils.book_append_sheet(wb, ws, nombreHoja);
         });
         
-        // Crear hoja de trabajo
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-        
-        // Ajustar ancho de columnas
-        const colWidths = [
-            { wch: 12 }, // Código
-            { wch: 12 }, // CI
-            { wch: 25 }, // Nombre Completo
-            { wch: 20 }, // Especialidad
-            { wch: 8 },  // Año
-            { wch: 20 }  // Fecha/Hora Registro
-        ];
-        ws['!cols'] = colWidths;
-        
-        // Fusionar celdas para el título
-        ws['!merges'] = [
-            { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }, // Título
-            { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } }, // Fecha generación
-            { s: { r: 2, c: 0 }, e: { r: 2, c: 5 } }  // Total asistencias
-        ];
-        
-        // Agregar hoja al libro
-        XLSX.utils.book_append_sheet(wb, ws, 'Asistencias');
-        
         // Generar nombre de archivo
-        const nombreArchivo = `Asistencias_${currentEventoNombre.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        const nombreArchivo = `Asistencias_Completas_${currentEventoNombre.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
         
         // Descargar archivo Excel
         XLSX.writeFile(wb, nombreArchivo);
         
-        alert('Archivo Excel exportado correctamente.');
+        alert('Archivo Excel exportado correctamente con todas las especialidades.');
         
     } catch (error) {
         console.error('Error exportando:', error);
