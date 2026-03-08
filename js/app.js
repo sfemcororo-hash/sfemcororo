@@ -17,17 +17,30 @@ let currentEventoNombre = null;
 // ========== AUTENTICACIÓN CON SUPABASE AUTH ==========
 
 async function login() {
-    const email = document.getElementById('email').value;
+    const emailOrCi = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const errorEl = document.getElementById('login-error');
 
-    if (!email || !password) {
+    if (!emailOrCi || !password) {
         errorEl.textContent = 'Completa todos los campos';
         return;
     }
 
     try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        let email = emailOrCi;
+        
+        // Si es el CI del admin, convertir a email
+        if (emailOrCi === '79310777') {
+            email = 'admin@escuela.com';
+        }
+        // Verificar si es un CI (solo números) para futuros usuarios
+        else if (/^\d+$/.test(emailOrCi)) {
+            errorEl.textContent = 'CI no encontrado';
+            return;
+        }
+
+        // Login con email
+        const { data, error } = await tursodb.auth.signInWithPassword({
             email,
             password
         });
@@ -38,7 +51,7 @@ async function login() {
         }
 
         // Cargar perfil del usuario
-        const { data: profile } = await supabase
+        const { data: profile } = await tursodb
             .from('perfiles')
             .select('*')
             .eq('id', data.user.id)
@@ -53,7 +66,7 @@ async function login() {
 }
 
 async function logout() {
-    await supabase.auth.signOut();
+    await tursodb.auth.signOut();
     currentUser = null;
     currentProfile = null;
     showLogin();
@@ -87,6 +100,322 @@ function showAsistenciaModule() {
 
 function showBibliotecaModule() {
     alert('Módulo de Biblioteca en desarrollo. Próximamente disponible.');
+}
+
+function showGestionUsuarios() {
+    hideAllSections();
+    document.getElementById('gestion-usuarios-section').classList.add('active');
+}
+
+function showRegistroDocentes() {
+    hideAllSections();
+    document.getElementById('registro-docentes-section').classList.add('active');
+}
+
+function showCargaMasiva() {
+    hideAllSections();
+    document.getElementById('carga-masiva-section').classList.add('active');
+    mostrarCargaNueva();
+}
+
+function mostrarCargaNueva() {
+    document.getElementById('seccion-carga-nueva').style.display = 'block';
+    document.getElementById('seccion-actualizacion').style.display = 'none';
+    document.getElementById('btn-carga-nueva').className = 'btn-primary';
+    document.getElementById('btn-actualizacion').className = 'btn-secondary';
+    document.getElementById('resultado-carga').innerHTML = '';
+}
+
+function mostrarActualizacion() {
+    document.getElementById('seccion-carga-nueva').style.display = 'none';
+    document.getElementById('seccion-actualizacion').style.display = 'block';
+    document.getElementById('btn-carga-nueva').className = 'btn-secondary';
+    document.getElementById('btn-actualizacion').className = 'btn-primary';
+    document.getElementById('admin-password-update').value = '';
+    document.getElementById('resultado-carga').innerHTML = '';
+}
+
+async function actualizarBDCompleta() {
+    const password = document.getElementById('admin-password-update').value;
+    const fileInput = document.getElementById('excel-file-update');
+    const resultadoDiv = document.getElementById('resultado-carga');
+    
+    if (!password) {
+        alert('Ingresa tu contraseña de administrador');
+        return;
+    }
+    
+    if (password !== 'Admin123!') {
+        resultadoDiv.innerHTML = '<p style="color: red;">❌ Contraseña incorrecta</p>';
+        return;
+    }
+    
+    if (!fileInput.files[0]) {
+        alert('Selecciona un archivo Excel');
+        return;
+    }
+    
+    const confirmacion = confirm('⚠️ CONFIRMACIÓN DE ACTUALIZACIÓN\n\nEsto eliminará TODOS los estudiantes actuales y cargará los nuevos desde Excel.\n\n¿Continuar?');
+    
+    if (!confirmacion) {
+        resultadoDiv.innerHTML = '<p style="color: orange;">🛑 Operación cancelada</p>';
+        return;
+    }
+    
+    try {
+        resultadoDiv.innerHTML = '<p style="color: blue;">🔄 Actualizando base de datos...</p>';
+        
+        // Contar estudiantes actuales
+        const countResult = await tursodb.query('SELECT COUNT(*) as total FROM estudiantes');
+        const estudiantesAnteriores = countResult.rows[0]?.total || 0;
+        
+        // Eliminar datos existentes
+        await tursodb.query('DELETE FROM asistencias');
+        await tursodb.query('DELETE FROM estudiantes');
+        
+        resultadoDiv.innerHTML = '<p style="color: blue;">📄 Procesando archivo Excel...</p>';
+        
+        // Procesar el nuevo archivo
+        await procesarExcelInterno(fileInput.files[0], resultadoDiv, estudiantesAnteriores);
+        
+    } catch (error) {
+        console.error('Error actualizando BD:', error);
+        resultadoDiv.innerHTML = `<p style="color: red;">❌ Error: ${error.message}</p>`;
+    }
+}
+
+function showLimpiarBD() {
+    // Función obsoleta - redirigir a actualización
+    showCargaMasiva();
+    mostrarActualizacion();
+}
+
+async function confirmarLimpiarBD() {
+    // Función obsoleta - mantener por compatibilidad
+    alert('Esta función se ha movido a "Carga Masiva > Actualizar Existentes"');
+}
+
+async function registrarDocente() {
+    const ci = document.getElementById('docente-ci').value;
+    const nombre = document.getElementById('docente-nombre').value;
+    const email = document.getElementById('docente-email').value;
+    const password = document.getElementById('docente-password').value;
+    const celular = document.getElementById('docente-celular').value;
+
+    if (!ci || !nombre || !email || !password) {
+        alert('Completa todos los campos obligatorios');
+        return;
+    }
+
+    try {
+        const { data, error } = await tursodb.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    nombre,
+                    ci,
+                    celular: celular || null,
+                    rol: 'usuario'
+                }
+            }
+        });
+
+        if (error) {
+            alert('Error: ' + error.message);
+            return;
+        }
+
+        document.getElementById('docente-ci').value = '';
+        document.getElementById('docente-nombre').value = '';
+        document.getElementById('docente-email').value = '';
+        document.getElementById('docente-password').value = '';
+        document.getElementById('docente-celular').value = '';
+
+        alert('✓ Docente registrado correctamente');
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
+async function procesarExcel() {
+    const fileInput = document.getElementById('excel-file');
+    const resultadoDiv = document.getElementById('resultado-carga');
+    
+    if (!fileInput.files[0]) {
+        alert('Selecciona un archivo Excel');
+        return;
+    }
+    
+    await procesarExcelInterno(fileInput.files[0], resultadoDiv, 0);
+}
+
+async function procesarExcelInterno(file, resultadoDiv, estudiantesAnteriores = 0) {
+    console.log('Archivo seleccionado:', file.name, 'Tamaño:', file.size);
+    resultadoDiv.innerHTML = '<p style="color: blue;">📁 Leyendo archivo Excel...</p>';
+
+    try {
+        const data = await file.arrayBuffer();
+        console.log('Archivo leído, tamaño del buffer:', data.byteLength);
+        resultadoDiv.innerHTML = '<p style="color: blue;">📊 Procesando datos...</p>';
+        
+        const workbook = XLSX.read(data);
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        console.log('Datos extraídos:', jsonData.length, 'filas');
+        console.log('Primeras 3 filas:', jsonData.slice(0, 3));
+
+        if (jsonData.length === 0) {
+            resultadoDiv.innerHTML = '<p style="color: red;">❌ El archivo está vacío</p>';
+            return;
+        }
+
+        // Detectar si tiene cabeceras
+        let startRow = 0;
+        const firstRow = jsonData[0];
+        if (firstRow && firstRow.some(cell => 
+            typeof cell === 'string' && 
+            (cell.toLowerCase().includes('nombre') || 
+             cell.toLowerCase().includes('dni') || 
+             cell.toLowerCase().includes('codigo'))
+        )) {
+            startRow = 1;
+            console.log('Cabeceras detectadas, iniciando desde fila 2');
+        } else {
+            console.log('Sin cabeceras, procesando desde fila 1');
+        }
+
+        let exitosos = 0;
+        let errores = 0;
+        const erroresDetalle = [];
+        const totalFilas = jsonData.length - startRow;
+        
+        resultadoDiv.innerHTML = `<p style="color: blue;">⏳ Procesando ${totalFilas} estudiantes...</p>`;
+
+        for (let i = startRow; i < jsonData.length; i++) {
+            const fila = jsonData[i];
+            
+            // Actualizar progreso cada 10 registros
+            if ((i - startRow) % 10 === 0) {
+                const progreso = Math.round(((i - startRow) / totalFilas) * 100);
+                resultadoDiv.innerHTML = `<p style="color: blue;">⏳ Procesando... ${progreso}% (${i - startRow}/${totalFilas})</p>`;
+            }
+            
+            // Saltar filas vacías
+            if (!fila || fila.every(cell => !cell)) {
+                console.log(`Fila ${i + 1} vacía, saltando`);
+                continue;
+            }
+            
+            try {
+                const estudiante = {
+                    codigo_unico: fila[0] ? fila[0].toString().trim() : '',
+                    dni: fila[1] ? fila[1].toString().trim() : '',
+                    nombre: fila[2] ? fila[2].toString().toUpperCase().trim() : '',
+                    apellido_paterno: fila[3] ? fila[3].toString().toUpperCase().trim() : '',
+                    apellido_materno: fila[4] ? fila[4].toString().toUpperCase().trim() : '',
+                    especialidad: fila[5] ? fila[5].toString().toUpperCase().trim() : '',
+                    anio_formacion: fila[6] ? fila[6].toString().toUpperCase().trim() : '',
+                    celular: fila[7] ? fila[7].toString().trim() : null,
+                    email: fila[8] ? fila[8].toString().toLowerCase().trim() : null
+                };
+                
+                // Detectar y corregir datos mal estructurados (nombre en posición incorrecta)
+                if (!estudiante.apellido_paterno && estudiante.nombre && estudiante.apellido_materno) {
+                    // Caso: RAMIREZ,,JOSE LUIS -> JOSE LUIS,RAMIREZ,SIN DATO
+                    const temp = estudiante.nombre;
+                    estudiante.nombre = estudiante.apellido_materno;
+                    estudiante.apellido_paterno = temp;
+                    estudiante.apellido_materno = 'SIN DATO';
+                    console.log(`Fila ${i + 1}: Datos reestructurados - Nombre: ${estudiante.nombre}, Apellido: ${estudiante.apellido_paterno}`);
+                }
+
+                // Validar campos obligatorios (apellido materno es opcional)
+                if (!estudiante.codigo_unico || !estudiante.dni || !estudiante.nombre || !estudiante.apellido_paterno || !estudiante.especialidad || !estudiante.anio_formacion) {
+                    errores++;
+                    const camposFaltantes = [];
+                    if (!estudiante.codigo_unico) camposFaltantes.push('código');
+                    if (!estudiante.dni) camposFaltantes.push('DNI');
+                    if (!estudiante.nombre) camposFaltantes.push('nombre');
+                    if (!estudiante.apellido_paterno) camposFaltantes.push('apellido paterno');
+                    if (!estudiante.especialidad) camposFaltantes.push('especialidad');
+                    if (!estudiante.anio_formacion) camposFaltantes.push('año de formación');
+                    
+                    const errorMsg = `Fila ${i + 1} (${estudiante.codigo_unico || 'Sin código'}): Faltan campos obligatorios: ${camposFaltantes.join(', ')}`;
+                    erroresDetalle.push(errorMsg);
+                    console.log(`❌ ${errorMsg}`);
+                    console.log('Datos de la fila:', estudiante);
+                    continue;
+                }
+                
+                // Si apellido materno está vacío, usar "SIN DATO"
+                if (!estudiante.apellido_materno) {
+                    estudiante.apellido_materno = 'SIN DATO';
+                    console.log(`Fila ${i + 1}: Apellido materno vacío, usando "SIN DATO"`);
+                }
+                
+                console.log(`Insertando estudiante ${exitosos + 1}:`, estudiante.codigo_unico, estudiante.nombre);
+                
+                const { error } = await tursodb.from('estudiantes').insert(estudiante);
+
+                if (error) {
+                    errores++;
+                    erroresDetalle.push(`Fila ${i + 1}: ${error.message}`);
+                    console.error(`Error insertando fila ${i + 1}:`, error);
+                } else {
+                    exitosos++;
+                }
+            } catch (err) {
+                errores++;
+                erroresDetalle.push(`Fila ${i + 1}: ${err.message}`);
+                console.error(`Error procesando fila ${i + 1}:`, err);
+            }
+        }
+
+        let resultado = `<h4>📊 Proceso completado:</h4>`;
+        resultado += `<p style="color: green; font-size: 18px;">✅ Estudiantes cargados: <strong>${exitosos}</strong></p>`;
+        if (errores > 0) {
+            resultado += `<p style="color: red; font-size: 18px;">❌ Errores encontrados: <strong>${errores}</strong></p>`;
+            resultado += `<p style="color: orange; font-size: 14px;">⚠️ Revisa los datos y corrige los errores antes de continuar</p>`;
+        }
+        
+        if (erroresDetalle.length > 0) {
+            resultado += `<details style="margin-top: 15px;"><summary style="cursor: pointer; font-weight: bold;">👁️ Ver detalles de errores (${errores})</summary><ul style="margin-top: 10px;">`;
+            erroresDetalle.slice(0, 20).forEach(error => {
+                resultado += `<li style="color: red; margin: 5px 0;">${error}</li>`;
+            });
+            if (erroresDetalle.length > 20) {
+                resultado += `<li style="color: orange;">... y ${erroresDetalle.length - 20} errores más</li>`;
+            }
+            resultado += `</ul></details>`;
+        }
+
+        resultadoDiv.innerHTML = resultado;
+        console.log('Proceso completado:', { exitosos, errores });
+        
+        if (exitosos > 0) {
+            setTimeout(() => {
+                if (errores > 0) {
+                    alert(`⚠️ Proceso completado con errores\n✅ ${exitosos} estudiantes cargados\n❌ ${errores} errores encontrados\n\nRevisa los detalles en pantalla y corrige los datos faltantes.`);
+                } else {
+                    const mensaje = estudiantesAnteriores > 0 
+                        ? `🔄 ¡Base de datos actualizada!\n❌ ${estudiantesAnteriores} estudiantes anteriores eliminados\n✅ ${exitosos} nuevos estudiantes cargados\n❌ 0 errores`
+                        : `🎉 ¡Proceso completado exitosamente!\n✅ ${exitosos} estudiantes cargados\n❌ 0 errores`;
+                    alert(mensaje);
+                }
+            }, 1000);
+        } else if (errores > 0) {
+            setTimeout(() => {
+                alert(`❌ No se pudo cargar ningún estudiante\n${errores} errores encontrados\n\nRevisa el formato del archivo Excel.`);
+            }, 1000);
+        }
+
+    } catch (error) {
+        console.error('Error general:', error);
+        resultadoDiv.innerHTML = `<p style="color: red;">❌ Error procesando archivo: ${error.message}</p>`;
+        alert('Error: ' + error.message);
+    }
 }
 
 function showCreateEvent() {
@@ -163,7 +492,7 @@ async function crearEvento() {
         return;
     }
 
-    await supabase.from('eventos').insert({
+    await tursodb.from('eventos').insert({
         nombre,
         fecha_inicio: fechaInicio,
         fecha_fin: fechaFin,
@@ -191,7 +520,7 @@ async function loadEventos(page = 1) {
     listEl.innerHTML = '<p style="color: white;">Cargando...</p>';
     paginationEl.innerHTML = '';
 
-    const { data, error } = await supabase
+    const { data, error } = await tursodb
         .from('eventos')
         .select('*');
 
@@ -230,7 +559,7 @@ async function loadEventos(page = 1) {
     
     for (const evento of eventosPage) {
         // Verificar si tiene asistencias
-        const { data: asistencias } = await supabase.query(`
+        const { data: asistencias } = await tursodb.query(`
             SELECT COUNT(*) as total FROM asistencias WHERE evento_id = ?
         `, [evento.id]);
         
@@ -306,7 +635,7 @@ function renderPagination() {
 function iniciarMonitoreoEvento(eventoId) {
     // Verificar cada 60 segundos si el evento sigue activo
     eventoTimer = setInterval(async () => {
-        const { data: evento } = await supabase
+        const { data: evento } = await tursodb
             .from('eventos')
             .select('fecha_inicio, fecha_fin, hora_inicio, hora_fin')
             .eq('id', eventoId)
@@ -341,7 +670,7 @@ function iniciarMonitoreoEvento(eventoId) {
 }
 
 async function validarEventoActivo(eventoId) {
-    const { data: evento } = await supabase
+    const { data: evento } = await tursodb
         .from('eventos')
         .select('fecha_inicio, fecha_fin, hora_inicio, hora_fin')
         .eq('id', eventoId)
@@ -432,7 +761,7 @@ async function onScanSuccess(codigoUnico) {
     isScanning = true;
 
     try {
-        const { data: estudiante, error: estudianteError } = await supabase
+        const { data: estudiante, error: estudianteError } = await tursodb
             .from('estudiantes')
             .select('*')
             .eq('codigo_unico', codigoUnico)
@@ -451,7 +780,7 @@ async function onScanSuccess(codigoUnico) {
             return;
         }
 
-        const { data: todasAsistencias } = await supabase
+        const { data: todasAsistencias } = await tursodb
             .from('asistencias')
             .select('*');
         
@@ -467,7 +796,7 @@ async function onScanSuccess(codigoUnico) {
             return;
         }
 
-        const { error: insertError } = await supabase.from('asistencias').insert({
+        const { error: insertError } = await tursodb.from('asistencias').insert({
             estudiante_id: estudiante.id,
             evento_id: currentEventId
         });
@@ -479,7 +808,7 @@ async function onScanSuccess(codigoUnico) {
             return;
         }
 
-        showMessage(`✓ ${estudiante.nombre} ${estudiante.apellido_paterno} ${estudiante.apellido_materno || ''} - Asistencia registrada`, 'success');
+        showMessage(`✓ ${formatearNombreCompleto(estudiante.nombre, estudiante.apellido_paterno, estudiante.apellido_materno)} - Asistencia registrada`, 'success');
         
         // Esperar un momento antes de recargar las asistencias
         setTimeout(() => {
@@ -513,8 +842,8 @@ async function loadAsistencias(eventoId) {
     
     // Usar consulta SQL directa
     console.log('Ejecutando consulta SQL con eventoId:', eventoId, 'tipo:', typeof eventoId);
-    const result = await supabase.query(`
-        SELECT a.*, e.nombre, e.apellido_paterno, e.apellido_materno, e.codigo_unico, e.dni, e.especialidad, e.anio
+    const result = await tursodb.query(`
+        SELECT a.*, e.nombre, e.apellido_paterno, e.apellido_materno, e.codigo_unico, e.dni, e.especialidad, e.anio_formacion
         FROM asistencias a
         JOIN estudiantes e ON a.estudiante_id = e.id
         WHERE a.evento_id = ?
@@ -542,12 +871,12 @@ async function loadAsistencias(eventoId) {
         });
         item.innerHTML = `
             <div style="width: 100%;">
-                <strong style="font-size: 16px; color: #333;">${asistencia.nombre} ${asistencia.apellido_paterno} ${asistencia.apellido_materno || ''}</strong><br>
+                <strong style="font-size: 16px; color: #333;">${formatearNombreCompleto(asistencia.nombre, asistencia.apellido_paterno, asistencia.apellido_materno)}</strong><br>
                 <small style="color: #666; font-size: 13px;">
                     📋 ${asistencia.codigo_unico} | 
-                    🆔 ${asistencia.dni || 'Sin DNI'} | 
-                    🎓 ${asistencia.especialidad || 'Sin especialidad'} | 
-                    📅 Año ${asistencia.anio || 'N/A'}
+                    🆔 ${formatearCampoOpcional(asistencia.dni, 'Sin DNI')} | 
+                    🎓 ${formatearCampoOpcional(asistencia.especialidad, 'Sin especialidad')} | 
+                    📅 Año ${formatearCampoOpcional(asistencia.anio_formacion, 'N/A')}
                 </small>
             </div>
             <span style="color: #007bff; font-weight: bold;">${time}</span>
@@ -557,6 +886,19 @@ async function loadAsistencias(eventoId) {
 }
 
 // ========== UTILIDADES ==========
+
+function formatearCampoOpcional(valor, valorPorDefecto = '') {
+    if (!valor || valor === 'SIN DATO' || valor === 'Sin DNI' || valor === 'Sin celular' || valor === 'Sin email' || valor === 'N/A') {
+        return valorPorDefecto;
+    }
+    return valor;
+}
+
+function formatearNombreCompleto(nombre, apellidoPaterno, apellidoMaterno) {
+    // Solo ocultar si es exactamente "SIN DATO", no otros valores falsy
+    const apellidoMaternoFormateado = (apellidoMaterno && apellidoMaterno !== 'SIN DATO') ? apellidoMaterno : '';
+    return `${nombre} ${apellidoPaterno}${apellidoMaternoFormateado ? ' ' + apellidoMaternoFormateado : ''}`;
+}
 
 function showMessage(text, type) {
     const msgEl = document.getElementById('mensaje');
@@ -577,22 +919,25 @@ async function loadEstudiantes() {
     const container = document.getElementById('especialidades-accordion');
     container.innerHTML = '<p style="color: white;">Cargando...</p>';
 
-    const { data } = await supabase
-        .from('estudiantes')
-        .select('*');
-
-    if (!data || data.length === 0) {
-        container.innerHTML = '<p style="color: white;">No hay estudiantes. Crea una especialidad para comenzar.</p>';
+    const result = await tursodb.query(`SELECT * FROM estudiantes ORDER BY especialidad, anio_formacion, codigo_unico`);
+    
+    console.log('Total estudiantes encontrados:', result.rows?.length || 0);
+    
+    if (!result.rows || result.rows.length === 0) {
+        container.innerHTML = '<p style="color: white;">No hay estudiantes. Usa la carga masiva para importar desde Excel.</p>';
         return;
     }
 
+    const data = result.rows;
+    
     // Ordenar en JavaScript
     data.sort((a, b) => {
         if (a.especialidad !== b.especialidad) {
             return a.especialidad.localeCompare(b.especialidad);
         }
-        if (a.anio !== b.anio) {
-            return a.anio - b.anio;
+        if (a.anio_formacion !== b.anio_formacion) {
+            const orden = ['PRIMERO', 'SEGUNDO', 'TERCERO', 'CUARTO', 'QUINTO'];
+            return orden.indexOf(a.anio_formacion) - orden.indexOf(b.anio_formacion);
         }
         return a.codigo_unico.localeCompare(b.codigo_unico);
     });
@@ -600,13 +945,15 @@ async function loadEstudiantes() {
     const grouped = {};
     data.forEach(est => {
         const esp = est.especialidad || 'Sin Especialidad';
-        const anio = est.anio || 'Sin Año';
+        const anio = est.anio_formacion || 'Sin Año';
         if (!grouped[esp]) grouped[esp] = {};
         if (!grouped[esp][anio]) grouped[esp][anio] = [];
         grouped[esp][anio].push(est);
     });
 
+    // Limpiar completamente el contenedor antes de agregar nuevo contenido
     container.innerHTML = '';
+    
     Object.keys(grouped).sort().forEach(especialidad => {
         const accordion = document.createElement('div');
         accordion.className = 'accordion';
@@ -626,7 +973,10 @@ async function loadEstudiantes() {
         container.appendChild(accordion);
 
         const aniosContainer = accordion.querySelector(`#anios-${espId}`);
-        Object.keys(grouped[especialidad]).sort((a, b) => a - b).forEach(anio => {
+        Object.keys(grouped[especialidad]).sort((a, b) => {
+            const orden = ['PRIMERO', 'SEGUNDO', 'TERCERO', 'CUARTO', 'QUINTO'];
+            return orden.indexOf(a) - orden.indexOf(b);
+        }).forEach(anio => {
             const subAccordion = document.createElement('div');
             subAccordion.className = 'sub-accordion';
             
@@ -664,8 +1014,8 @@ async function loadEstudiantes() {
             contentDiv.innerHTML = estudiantes.map(est => `
                 <div class="estudiante-item">
                     <div>
-                        <strong>${est.nombre} ${est.apellido_paterno} ${est.apellido_materno || ''}</strong><br>
-                        <small>📋 ${est.codigo_unico} | 🆔 ${est.dni || 'Sin DNI'} | 📱 ${est.celular || 'Sin celular'}</small>
+                        <strong>${formatearNombreCompleto(est.nombre, est.apellido_paterno, est.apellido_materno)}</strong><br>
+                        <small>📋 ${est.codigo_unico} | 🆔 ${formatearCampoOpcional(est.dni, 'Sin DNI')} | 📱 ${formatearCampoOpcional(est.celular, 'Sin celular')}</small>
                     </div>
                 </div>
             `).join('');
@@ -740,7 +1090,7 @@ async function agregarEstudiante() {
         return;
     }
 
-    const { error } = await supabase.from('estudiantes').insert({
+    const { error } = await tursodb.from('estudiantes').insert({
         codigo_unico: codigo,
         dni: dni,
         nombre,
@@ -749,7 +1099,7 @@ async function agregarEstudiante() {
         celular: celular || null,
         email: email || null,
         especialidad: currentEspecialidad,
-        anio: currentAnio
+        anio_formacion: currentAnio
     });
 
     if (error) {
@@ -784,21 +1134,22 @@ async function generarQRsGrupoDirecto(especialidad, anio) {
     container.innerHTML = '<p style="color: white;">Generando QRs...</p>';
     qrCodesGenerated = [];
 
-    const { data, error } = await supabase.from('estudiantes').select('*');
+    const { data, error } = await tursodb.from('estudiantes').select('*');
     
     if (error) {
         container.innerHTML = '<p style="color: white;">Error cargando estudiantes</p>';
+        console.error('Error cargando estudiantes:', error);
         return;
     }
-
+    
     const estudiantesFiltrados = (data || []).filter(est => 
-        est.especialidad === especialidad && est.anio == anio
+        est.especialidad === especialidad && est.anio_formacion == anio
     );
     
     estudiantesFiltrados.sort((a, b) => a.codigo_unico.localeCompare(b.codigo_unico));
 
     if (estudiantesFiltrados.length === 0) {
-        container.innerHTML = '<p style="color: white;">No hay estudiantes</p>';
+        container.innerHTML = '<p style="color: white;">No hay estudiantes para esta especialidad y año</p>';
         return;
     }
 
@@ -807,12 +1158,12 @@ async function generarQRsGrupoDirecto(especialidad, anio) {
     estudiantesFiltrados.forEach((est, index) => {
         const qrItem = document.createElement('div');
         qrItem.className = 'qr-item';
-        const nombreCompleto = `${est.nombre} ${est.apellido_paterno} ${est.apellido_materno || ''}`;
+        const nombreCompleto = formatearNombreCompleto(est.nombre, est.apellido_paterno, est.apellido_materno);
         qrItem.innerHTML = `
             <h3>${nombreCompleto}</h3>
             <p><strong>${est.codigo_unico}</strong></p>
             <div class="qr-code" id="qr-${index}"></div>
-            <button class="download-btn" onclick="downloadSingleQR('qr-${index}', '${est.codigo_unico}')">📥 Descargar</button>
+            <button class="download-btn" onclick="downloadSingleQR('qr-${index}', '${nombreCompleto.replace(/\s+/g, '_')}')">📥 Descargar</button>
         `;
         container.appendChild(qrItem);
 
@@ -827,7 +1178,7 @@ async function generarQRsGrupoDirecto(especialidad, anio) {
         }
         }, index * 100);
 
-        qrCodesGenerated.push({ id: `qr-${index}`, codigo: est.codigo_unico });
+        qrCodesGenerated.push({ id: `qr-${index}`, nombre: nombreCompleto.replace(/\s+/g, '_') });
     });
 }
 
@@ -840,14 +1191,96 @@ function downloadSingleQR(elementId, filename) {
     link.click();
 }
 
-function downloadAllQRs() {
+async function downloadAllQRs() {
     if (qrCodesGenerated.length === 0) {
         alert('No hay QRs generados');
         return;
     }
-    qrCodesGenerated.forEach((qr, index) => {
-        setTimeout(() => downloadSingleQR(qr.id, qr.codigo), index * 300);
-    });
+    
+    const zip = new JSZip();
+    const especialidadLimpia = currentEspecialidad.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_').toUpperCase();
+    const nombreZip = `QRs_${especialidadLimpia}_${currentAnio}.zip`;
+    
+    const container = document.getElementById('qr-container');
+    
+    try {
+        // Buscar todos los canvas ANTES de cambiar el contenido
+        const allCanvas = document.querySelectorAll('#qr-container canvas');
+        console.log('Canvas encontrados:', allCanvas.length);
+        
+        if (allCanvas.length === 0) {
+            throw new Error('No se encontraron códigos QR. Genera los QRs primero.');
+        }
+        
+        // Crear elemento de progreso sin eliminar el contenido existente
+        const progressDiv = document.createElement('div');
+        progressDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; z-index: 9999;';
+        progressDiv.textContent = '📦 Preparando descarga...';
+        document.body.appendChild(progressDiv);
+        
+        let archivosAgregados = 0;
+        
+        // Procesar cada canvas
+        for (let i = 0; i < allCanvas.length; i++) {
+            const canvas = allCanvas[i];
+            
+            try {
+                // Obtener el nombre del estudiante del elemento padre
+                const qrItem = canvas.closest('.qr-item');
+                const nombreElement = qrItem ? qrItem.querySelector('h3') : null;
+                const nombreCompleto = nombreElement ? nombreElement.textContent.trim() : `Estudiante_${i + 1}`;
+                const nombreArchivo = nombreCompleto.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+                
+                // Convertir canvas a blob
+                const blob = await new Promise(resolve => {
+                    canvas.toBlob(resolve, 'image/png', 1.0);
+                });
+                
+                if (blob && blob.size > 100) {
+                    zip.file(`QR_${nombreArchivo}.png`, blob);
+                    archivosAgregados++;
+                    console.log(`QR agregado: ${nombreArchivo}`);
+                }
+            } catch (err) {
+                console.warn(`Error procesando canvas ${i}:`, err);
+            }
+            
+            const progreso = Math.round(((i + 1) / allCanvas.length) * 100);
+            progressDiv.textContent = `📦 Procesando... ${progreso}%`;
+        }
+        
+        if (archivosAgregados === 0) {
+            throw new Error('No se pudieron procesar los códigos QR.');
+        }
+        
+        progressDiv.textContent = '💾 Creando ZIP...';
+        
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        
+        progressDiv.textContent = '⬇️ Descargando...';
+        
+        // Descargar
+        const url = URL.createObjectURL(zipBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = nombreZip;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        // Remover progreso
+        document.body.removeChild(progressDiv);
+        
+        alert(`✅ Descarga completada\n📁 ${nombreZip}\n📊 ${archivosAgregados} QRs incluidos`);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        // Remover progreso si existe
+        const progressDiv = document.querySelector('div[style*="position: fixed"]');
+        if (progressDiv) document.body.removeChild(progressDiv);
+        alert(`❌ ${error.message}`);
+    }
 }
 // ========== GESTIÓN DE EVENTOS AVANZADA ==========
 
@@ -858,7 +1291,7 @@ async function eliminarEvento(eventoId) {
     
     try {
         // Verificar que no tenga asistencias
-        const { data: asistencias } = await supabase.query(`
+        const { data: asistencias } = await tursodb.query(`
             SELECT COUNT(*) as total FROM asistencias WHERE evento_id = ?
         `, [eventoId]);
         
@@ -868,7 +1301,7 @@ async function eliminarEvento(eventoId) {
         }
         
         // Eliminar evento
-        await supabase.query(`DELETE FROM eventos WHERE id = ?`, [eventoId]);
+        await tursodb.query(`DELETE FROM eventos WHERE id = ?`, [eventoId]);
         
         alert('Evento eliminado correctamente.');
         loadEventos(currentPage);
@@ -890,7 +1323,7 @@ async function verListaAsistencias(eventoId, eventoNombre) {
     listEl.innerHTML = '<p>Cargando asistencias...</p>';
     
     try {
-        const result = await supabase.query(`
+        const result = await tursodb.query(`
             SELECT 
                 a.timestamp,
                 e.codigo_unico,
@@ -901,7 +1334,7 @@ async function verListaAsistencias(eventoId, eventoNombre) {
                 e.celular,
                 e.email,
                 e.especialidad,
-                e.anio
+                e.anio_formacion
             FROM asistencias a
             JOIN estudiantes e ON a.estudiante_id = e.id
             WHERE a.evento_id = ?
@@ -942,18 +1375,18 @@ async function verListaAsistencias(eventoId, eventoNombre) {
                 second: '2-digit',
                 hour12: false
             });
-            const nombreCompleto = `${asistencia.nombre} ${asistencia.apellido_paterno} ${asistencia.apellido_materno || ''}`;
+            const nombreCompleto = formatearNombreCompleto(asistencia.nombre, asistencia.apellido_paterno, asistencia.apellido_materno);
             
             tableHTML += `
                 <tr>
                     <td>${fecha}</td>
                     <td>${asistencia.codigo_unico}</td>
-                    <td>${asistencia.dni || 'N/A'}</td>
+                    <td>${formatearCampoOpcional(asistencia.dni, 'N/A')}</td>
                     <td>${nombreCompleto}</td>
-                    <td>${asistencia.celular || 'N/A'}</td>
-                    <td>${asistencia.email || 'N/A'}</td>
-                    <td>${asistencia.especialidad || 'N/A'}</td>
-                    <td>${asistencia.anio || 'N/A'}</td>
+                    <td>${formatearCampoOpcional(asistencia.celular, 'N/A')}</td>
+                    <td>${formatearCampoOpcional(asistencia.email, 'N/A')}</td>
+                    <td>${formatearCampoOpcional(asistencia.especialidad, 'N/A')}</td>
+                    <td>${formatearCampoOpcional(asistencia.anio_formacion, 'N/A')}</td>
                 </tr>
             `;
         });
@@ -971,7 +1404,7 @@ async function exportarAsistenciasExcel() {
     if (!currentEventoId) return;
     
     try {
-        const result = await supabase.query(`
+        const result = await tursodb.query(`
             SELECT 
                 a.timestamp,
                 e.codigo_unico,
@@ -982,7 +1415,7 @@ async function exportarAsistenciasExcel() {
                 e.celular,
                 e.email,
                 e.especialidad,
-                e.anio
+                e.anio_formacion
             FROM asistencias a
             JOIN estudiantes e ON a.estudiante_id = e.id
             WHERE a.evento_id = ?
@@ -1005,16 +1438,16 @@ async function exportarAsistenciasExcel() {
                 second: '2-digit',
                 hour12: false
             });
-            const nombreCompleto = `${asistencia.nombre} ${asistencia.apellido_paterno} ${asistencia.apellido_materno || ''}`;
+            const nombreCompleto = formatearNombreCompleto(asistencia.nombre, asistencia.apellido_paterno, asistencia.apellido_materno);
             
             return {
                 'Código': asistencia.codigo_unico,
-                'CI': asistencia.dni || 'N/A',
+                'CI': formatearCampoOpcional(asistencia.dni, 'N/A'),
                 'Nombre Completo': nombreCompleto,
-                'Celular': asistencia.celular || 'N/A',
-                'Email': asistencia.email || 'N/A',
-                'Especialidad': asistencia.especialidad || 'N/A',
-                'Año': asistencia.anio || 'N/A',
+                'Celular': formatearCampoOpcional(asistencia.celular, 'N/A'),
+                'Email': formatearCampoOpcional(asistencia.email, 'N/A'),
+                'Especialidad': formatearCampoOpcional(asistencia.especialidad, 'N/A'),
+                'Año': formatearCampoOpcional(asistencia.anio_formacion, 'N/A'),
                 'Fecha/Hora Registro': fecha
             };
         });

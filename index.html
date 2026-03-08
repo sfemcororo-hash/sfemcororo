@@ -15,7 +15,7 @@
             <div class="login-container">
                 <h1>🎓 Sistema de Asistencia</h1>
                 <div class="card">
-                    <input type="email" id="email" placeholder="Email">
+                    <input type="text" id="email" placeholder="Email o CI">
                     <input type="password" id="password" placeholder="Contraseña">
                     <button onclick="login()">Ingresar</button>
                     <p id="login-error" class="error"></p>
@@ -37,6 +37,11 @@
                         <div class="module-icon">📋</div>
                         <h3>Asistencia</h3>
                         <p>Gestión de estudiantes, eventos y registro de asistencias</p>
+                    </div>
+                    <div class="module-card" onclick="showGestionUsuarios()">
+                        <div class="module-icon">👥</div>
+                        <h3>Gestión de Usuarios</h3>
+                        <p>Registro de docentes y carga masiva de estudiantes</p>
                     </div>
                     <div class="module-card" onclick="showBibliotecaModule()">
                         <div class="module-icon">📚</div>
@@ -124,25 +129,20 @@
                     <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Especialidad:</label>
                     <select id="nueva-especialidad">
                         <option value="">Selecciona una especialidad</option>
-                        <option value="Ingeniería de Sistemas">Ingeniería de Sistemas</option>
-                        <option value="Ingeniería Industrial">Ingeniería Industrial</option>
-                        <option value="Ingeniería Civil">Ingeniería Civil</option>
-                        <option value="Ingeniería Electrónica">Ingeniería Electrónica</option>
-                        <option value="Ingeniería Mecánica">Ingeniería Mecánica</option>
-                        <option value="Ingeniería Química">Ingeniería Química</option>
-                        <option value="Arquitectura">Arquitectura</option>
-                        <option value="Administración">Administración</option>
-                        <option value="Contabilidad">Contabilidad</option>
-                        <option value="Derecho">Derecho</option>
+                        <option value="EDUCACIÓN PRIMARIA COMUNITARIA VOCACIONAL">EDUCACIÓN PRIMARIA COMUNITARIA VOCACIONAL</option>
+                        <option value="ARTES PLÁSTICAS Y VISUALES">ARTES PLÁSTICAS Y VISUALES</option>
+                        <option value="MATEMÁTICA">MATEMÁTICA</option>
+                        <option value="COMUNICACIÓN Y LENGUAJES: LENGUA EXTRANJERA (INGLÉS)">COMUNICACIÓN Y LENGUAJES: LENGUA EXTRANJERA (INGLÉS)</option>
+                        <option value="EDUCACIÓN INICIAL EN FAMILIA COMUNITARIA">EDUCACIÓN INICIAL EN FAMILIA COMUNITARIA</option>
                     </select>
-                    <label style="color: #666; font-size: 14px; margin-bottom: 5px; margin-top: 10px;">Año:</label>
+                    <label style="color: #666; font-size: 14px; margin-bottom: 5px; margin-top: 10px;">Año de Formación:</label>
                     <select id="nuevo-anio">
                         <option value="">Selecciona un año</option>
-                        <option value="1">Primero</option>
-                        <option value="2">Segundo</option>
-                        <option value="3">Tercero</option>
-                        <option value="4">Cuarto</option>
-                        <option value="5">Quinto</option>
+                        <option value="PRIMERO">PRIMERO</option>
+                        <option value="SEGUNDO">SEGUNDO</option>
+                        <option value="TERCERO">TERCERO</option>
+                        <option value="CUARTO">CUARTO</option>
+                        <option value="QUINTO">QUINTO</option>
                     </select>
                     <button onclick="crearEspecialidadAnio()" class="btn-primary">Continuar y Agregar Estudiante</button>
                 </div>
@@ -158,13 +158,13 @@
             <div class="container">
                 <div class="card">
                     <p style="color: #666; margin-bottom: 15px;"><strong>Especialidad:</strong> <span id="form-especialidad"></span></p>
-                    <p style="color: #666; margin-bottom: 15px;"><strong>Año:</strong> <span id="form-anio"></span></p>
+                    <p style="color: #666; margin-bottom: 15px;"><strong>Año de Formación:</strong> <span id="form-anio"></span></p>
                     <input type="text" id="est-codigo" placeholder="Código Único (ej: EST006)">
                     <input type="text" id="est-dni" placeholder="DNI/CI">
                     <input type="text" id="est-nombre" placeholder="Nombre">
                     <input type="text" id="est-apellido-paterno" placeholder="Apellido Paterno">
                     <input type="text" id="est-apellido-materno" placeholder="Apellido Materno">
-                    <input type="tel" id="est-celular" placeholder="Celular">
+                    <input type="tel" id="est-celular" placeholder="Celular (opcional)">
                     <input type="email" id="est-email" placeholder="Email (opcional)">
                     <button onclick="agregarEstudiante()" class="btn-primary">Guardar Estudiante</button>
                 </div>
@@ -178,7 +178,7 @@
                 <button onclick="showListaEstudiantes()" class="btn-secondary">← Volver</button>
             </div>
             <div class="container">
-                <button class="btn-success" onclick="downloadAllQRs()">📥 Descargar Todos</button>
+                <button class="btn-success" onclick="downloadAllQRs()">📦 Descargar ZIP</button>
                 <div id="qr-container" class="qr-grid" style="margin-top: 20px;"></div>
             </div>
         </div>
@@ -196,12 +196,107 @@
                 <div id="asistencias-completas-list" class="asistencias-table"></div>
             </div>
         </div>
+
+        <!-- Gestión de Usuarios -->
+        <div id="gestion-usuarios-section" class="section hidden">
+            <div class="header">
+                <h1>Gestión de Usuarios</h1>
+                <button onclick="showDashboard()" class="btn-secondary">← Volver</button>
+            </div>
+            <div class="container">
+                <div class="modules-grid">
+                    <div class="module-card" onclick="showRegistroDocentes()">
+                        <div class="module-icon">👨‍🏫</div>
+                        <h3>Registro de Docentes</h3>
+                        <p>Registrar nuevos usuarios docentes en el sistema</p>
+                    </div>
+                    <div class="module-card" onclick="showCargaMasiva()">
+                        <div class="module-icon">📄</div>
+                        <h3>Carga Masiva</h3>
+                        <p>Subir estudiantes desde archivo Excel</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registro de Docentes -->
+        <div id="registro-docentes-section" class="section hidden">
+            <div class="header">
+                <h1>Registro de Docentes</h1>
+                <button onclick="showGestionUsuarios()" class="btn-secondary">← Volver</button>
+            </div>
+            <div class="container">
+                <div class="card">
+                    <input type="text" id="docente-ci" placeholder="CI/DNI">
+                    <input type="text" id="docente-nombre" placeholder="Nombre Completo">
+                    <input type="email" id="docente-email" placeholder="Email">
+                    <input type="password" id="docente-password" placeholder="Contraseña">
+                    <input type="tel" id="docente-celular" placeholder="Celular (opcional)">
+                    <button onclick="registrarDocente()" class="btn-primary">Registrar Docente</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carga Masiva -->
+        <div id="carga-masiva-section" class="section hidden">
+            <div class="header">
+                <h1>Carga Masiva de Estudiantes</h1>
+                <button onclick="showGestionUsuarios()" class="btn-secondary">← Volver</button>
+            </div>
+            <div class="container">
+                <div class="card">
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button onclick="mostrarCargaNueva()" class="btn-primary" id="btn-carga-nueva">📄 Cargar Nuevos</button>
+                        <button onclick="mostrarActualizacion()" class="btn-secondary" id="btn-actualizacion">🔄 Actualizar Existentes</button>
+                    </div>
+                    
+                    <!-- Carga Nueva -->
+                    <div id="seccion-carga-nueva">
+                        <h3>Formato del archivo Excel:</h3>
+                        <p style="color: #666; margin-bottom: 15px;">El archivo puede tener cabeceras o no. Columnas en orden:</p>
+                        <ul style="color: #666; margin-bottom: 20px; text-align: left;">
+                            <li><strong>Columna A:</strong> Código del estudiante (OBLIGATORIO - ej: 102-ARD03100500)</li>
+                            <li><strong>Columna B:</strong> DNI/CI del estudiante</li>
+                            <li><strong>Columna C:</strong> Nombre</li>
+                            <li><strong>Columna D:</strong> Apellido paterno</li>
+                            <li><strong>Columna E:</strong> Apellido materno (opcional - se completará con "SIN DATO")</li>
+                            <li><strong>Columna F:</strong> Especialidad completa</li>
+                            <li><strong>Columna G:</strong> Año (PRIMERO, SEGUNDO, TERCERO, CUARTO, QUINTO)</li>
+                            <li><strong>Columna H:</strong> Celular (opcional)</li>
+                            <li><strong>Columna I:</strong> Email (opcional)</li>
+                        </ul>
+                        <input type="file" id="excel-file" accept=".xlsx,.xls" style="margin-bottom: 15px;">
+                        <button onclick="procesarExcel()" class="btn-success">Subir y Procesar Excel</button>
+                    </div>
+                    
+                    <!-- Actualización -->
+                    <div id="seccion-actualizacion" style="display: none;">
+                        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                            <h4 style="color: #856404; margin-bottom: 10px;">⚠️ Actualizar Base de Datos</h4>
+                            <p style="color: #856404; margin-bottom: 10px;">Esta opción eliminará TODOS los estudiantes actuales y cargará los nuevos desde Excel.</p>
+                            <p style="color: #856404; font-size: 14px;">Las asistencias registradas también se eliminarán.</p>
+                        </div>
+                        
+                        <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px;">
+                            <label style="font-weight: bold; margin-bottom: 10px; display: block;">Confirma tu contraseña de administrador:</label>
+                            <input type="password" id="admin-password-update" placeholder="Contraseña de admin" style="margin-bottom: 15px;">
+                        </div>
+                        
+                        <input type="file" id="excel-file-update" accept=".xlsx,.xls" style="margin-bottom: 15px;">
+                        <button onclick="actualizarBDCompleta()" class="btn-danger">🔄 Actualizar Base de Datos</button>
+                    </div>
+                    
+                    <div id="resultado-carga" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="js/tursodb.js"></script>
     <script>
         // Máscara para formato 24 horas en campos de hora

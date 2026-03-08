@@ -1,4 +1,4 @@
--- CREAR USUARIO ADMIN
+-- CREAR USUARIO ADMIN PARA ESFEM
 INSERT INTO auth.users (
     instance_id,
     id,
@@ -23,7 +23,7 @@ INSERT INTO auth.users (
     'admin@escuela.com',
     crypt('Admin123!', gen_salt('bf')),
     NOW(),
-    '{"nombre": "Administrador", "rol": "admin"}'::jsonb,
+    '{"nombre": "Administrador ESFEM", "rol": "admin", "ci": "79310777"}'::jsonb,
     '{"provider": "email", "providers": ["email"]}'::jsonb,
     NOW(),
     NOW(),

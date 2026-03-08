@@ -164,21 +164,73 @@ class TursoDB {
             )
         `);
         
-        await this.query(`
-            CREATE TABLE IF NOT EXISTS estudiantes (
-                id TEXT PRIMARY KEY,
-                codigo_unico TEXT UNIQUE NOT NULL,
-                dni TEXT UNIQUE NOT NULL,
-                nombre TEXT NOT NULL,
-                apellido_paterno TEXT NOT NULL,
-                apellido_materno TEXT,
-                celular TEXT,
-                email TEXT,
-                especialidad TEXT NOT NULL,
-                anio INTEGER NOT NULL,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
+        // Verificar si la tabla estudiantes existe y tiene la estructura correcta
+        const tableInfo = await this.query(`PRAGMA table_info(estudiantes)`);
+        const hasAnioFormacion = tableInfo.rows.some(col => col.name === 'anio_formacion');
+        
+        if (!hasAnioFormacion) {
+            console.log('Actualizando estructura de tabla estudiantes...');
+            
+            // Crear nueva tabla con estructura correcta
+            await this.query(`
+                CREATE TABLE IF NOT EXISTS estudiantes_nueva (
+                    id TEXT PRIMARY KEY,
+                    codigo_unico TEXT UNIQUE NOT NULL,
+                    dni TEXT NOT NULL,
+                    nombre TEXT NOT NULL,
+                    apellido_paterno TEXT NOT NULL,
+                    apellido_materno TEXT,
+                    especialidad TEXT NOT NULL,
+                    anio_formacion TEXT NOT NULL,
+                    celular TEXT,
+                    email TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+            
+            // Migrar datos existentes si los hay
+            const existingData = await this.query(`SELECT COUNT(*) as count FROM estudiantes`);
+            if (existingData.rows[0]?.count > 0) {
+                await this.query(`
+                    INSERT INTO estudiantes_nueva (id, codigo_unico, dni, nombre, apellido_paterno, apellido_materno, especialidad, anio_formacion, celular, email, created_at)
+                    SELECT id, codigo_unico, dni, nombre, apellido_paterno, apellido_materno, especialidad, 
+                           CASE 
+                               WHEN anio = 1 THEN 'PRIMERO'
+                               WHEN anio = 2 THEN 'SEGUNDO'
+                               WHEN anio = 3 THEN 'TERCERO'
+                               WHEN anio = 4 THEN 'CUARTO'
+                               WHEN anio = 5 THEN 'QUINTO'
+                               ELSE COALESCE(anio_formacion, 'PRIMERO')
+                           END as anio_formacion,
+                           celular, email, created_at
+                    FROM estudiantes
+                `);
+            }
+            
+            // Renombrar tablas
+            await this.query(`DROP TABLE IF EXISTS estudiantes_old`);
+            await this.query(`ALTER TABLE estudiantes RENAME TO estudiantes_old`);
+            await this.query(`ALTER TABLE estudiantes_nueva RENAME TO estudiantes`);
+            
+            console.log('Estructura de tabla estudiantes actualizada correctamente');
+        } else {
+            // Crear tabla con estructura correcta si no existe
+            await this.query(`
+                CREATE TABLE IF NOT EXISTS estudiantes (
+                    id TEXT PRIMARY KEY,
+                    codigo_unico TEXT UNIQUE NOT NULL,
+                    dni TEXT NOT NULL,
+                    nombre TEXT NOT NULL,
+                    apellido_paterno TEXT NOT NULL,
+                    apellido_materno TEXT,
+                    especialidad TEXT NOT NULL,
+                    anio_formacion TEXT NOT NULL,
+                    celular TEXT,
+                    email TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+        }
         
         await this.query(`
             CREATE TABLE IF NOT EXISTS eventos (
@@ -223,4 +275,6 @@ class TursoDB {
 
 // Reemplazar con TursoDB
 const supabase = new TursoDB();
+const tursodb = new TursoDB();
 supabase.initializeData();
+tursodb.initializeData();
