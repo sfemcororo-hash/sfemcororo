@@ -65,7 +65,8 @@ body {
     top: 0;
     z-index: 100;
     backdrop-filter: blur(10px);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 3px solid #007bff;
+    box-shadow: 0 3px 0 0 white, 0 4px 20px rgba(0,0,0,0.3);
 }
 
 .header h1 {
