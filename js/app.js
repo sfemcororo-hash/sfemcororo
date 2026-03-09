@@ -1831,22 +1831,94 @@ function downloadSingleQR(elementId, filename) {
     const canvas = document.querySelector(`#${elementId} canvas`);
     if (!canvas) return;
     
-    // Crear canvas de alta resolución (150 DPI)
-    const highResCanvas = document.createElement('canvas');
-    const ctx = highResCanvas.getContext('2d');
-    const scale = 150 / 72; // Factor de escala para 150 DPI
+    // Crear un nuevo canvas con los mismos píxeles pero diferente DPI en metadatos
+    const newCanvas = document.createElement('canvas');
+    const ctx = newCanvas.getContext('2d');
     
-    highResCanvas.width = canvas.width * scale;
-    highResCanvas.height = canvas.height * scale;
+    newCanvas.width = canvas.width;
+    newCanvas.height = canvas.height;
     
-    ctx.imageSmoothingEnabled = false;
-    ctx.scale(scale, scale);
+    // Copiar la imagen
     ctx.drawImage(canvas, 0, 0);
     
-    const link = document.createElement('a');
-    link.download = `${filename}.png`;
-    link.href = highResCanvas.toDataURL('image/png', 1.0);
-    link.click();
+    // Convertir a blob y modificar metadatos DPI
+    newCanvas.toBlob(function(blob) {
+        // Crear un nuevo blob con metadatos DPI de 150
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const arrayBuffer = e.target.result;
+            const uint8Array = new Uint8Array(arrayBuffer);
+            
+            // Modificar metadatos PNG para 150 DPI
+            // Buscar chunk pHYs y modificarlo o agregarlo
+            const modifiedBuffer = setPNGDPI(uint8Array, 150);
+            
+            const newBlob = new Blob([modifiedBuffer], { type: 'image/png' });
+            const link = document.createElement('a');
+            link.download = `${filename}.png`;
+            link.href = URL.createObjectURL(newBlob);
+            link.click();
+            URL.revokeObjectURL(link.href);
+        };
+        reader.readAsArrayBuffer(blob);
+    }, 'image/png', 1.0);
+}
+
+// Función para establecer DPI en PNG
+function setPNGDPI(uint8Array, dpi) {
+    const pixelsPerMeter = Math.round(dpi * 39.3701); // Convertir DPI a píxeles por metro
+    
+    // Crear chunk pHYs (Physical pixel dimensions)
+    const pHYsChunk = new Uint8Array(21);
+    const view = new DataView(pHYsChunk.buffer);
+    
+    // Longitud del chunk (9 bytes)
+    view.setUint32(0, 9, false);
+    
+    // Tipo de chunk 'pHYs'
+    pHYsChunk[4] = 0x70; // p
+    pHYsChunk[5] = 0x48; // H
+    pHYsChunk[6] = 0x59; // Y
+    pHYsChunk[7] = 0x73; // s
+    
+    // Píxeles por unidad X (4 bytes)
+    view.setUint32(8, pixelsPerMeter, false);
+    
+    // Píxeles por unidad Y (4 bytes)
+    view.setUint32(12, pixelsPerMeter, false);
+    
+    // Unidad especificador (1 byte) - 1 = metros
+    pHYsChunk[16] = 1;
+    
+    // CRC32 del chunk
+    const crc = calculateCRC32(pHYsChunk.slice(4, 17));
+    view.setUint32(17, crc, false);
+    
+    // Insertar el chunk después del IHDR
+    const result = new Uint8Array(uint8Array.length + 21);
+    result.set(uint8Array.slice(0, 33)); // PNG signature + IHDR
+    result.set(pHYsChunk, 33);
+    result.set(uint8Array.slice(33), 54);
+    
+    return result;
+}
+
+// Función CRC32 simplificada para PNG
+function calculateCRC32(data) {
+    const crcTable = [];
+    for (let i = 0; i < 256; i++) {
+        let c = i;
+        for (let j = 0; j < 8; j++) {
+            c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        }
+        crcTable[i] = c;
+    }
+    
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < data.length; i++) {
+        crc = crcTable[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8);
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
 }
 
 async function downloadAllQRs() {
