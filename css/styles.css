@@ -3,7 +3,18 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-image: url('../fondo_escritorio.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
     min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+    body {
+        background-image: url('../fondo_movil.jpg');
+    }
 }
 
 .section { display: none; }
