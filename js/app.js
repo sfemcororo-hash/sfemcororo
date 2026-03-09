@@ -282,36 +282,29 @@ async function syncOfflineQueue() {
         for (const asistencia of batch) {
             try {
                 // VERIFICAR SI YA EXISTE antes de insertar
-                const { data: existente } = await tursodb.query(`
+                const existente = await tursodb.query(`
                     SELECT id FROM asistencias 
                     WHERE estudiante_id = ? AND evento_id = ?
                 `, [asistencia.estudiante_id, asistencia.evento_id]);
                 
-                if (existente && existente.length > 0) {
+                if (existente && existente.rows && existente.rows.length > 0) {
                     // Ya existe - saltar sin error
                     skippedCount++;
                     console.log(`Asistencia ya existe, saltando: estudiante_id=${asistencia.estudiante_id}, evento_id=${asistencia.evento_id}`);
                 } else {
-                    // No existe - insertar
-                    const { error } = await tursodb.from('asistencias').insert({
-                        estudiante_id: asistencia.estudiante_id,
-                        evento_id: asistencia.evento_id,
-                        timestamp: asistencia.timestamp
-                    });
+                    // No existe - insertar usando query directo
+                    const result = await tursodb.query(`
+                        INSERT INTO asistencias (estudiante_id, evento_id, timestamp)
+                        VALUES (?, ?, ?)
+                    `, [asistencia.estudiante_id, asistencia.evento_id, asistencia.timestamp]);
                     
-                    if (!error) {
-                        syncedCount++;
-                        console.log(`Asistencia sincronizada: estudiante_id=${asistencia.estudiante_id}`);
-                    } else {
-                        // Error insertando - devolver a la cola
-                        offlineQueue.unshift(asistencia);
-                        console.error('Error sincronizando asistencia:', error);
-                    }
+                    syncedCount++;
+                    console.log(`Asistencia sincronizada: estudiante_id=${asistencia.estudiante_id}`);
                 }
             } catch (err) {
-                // Error de red - devolver a la cola
+                // Error - devolver a la cola
                 offlineQueue.unshift(asistencia);
-                console.error('Error de red sincronizando:', err);
+                console.error('Error sincronizando asistencia:', err);
             }
         }
         
