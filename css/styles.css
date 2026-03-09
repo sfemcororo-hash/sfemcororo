@@ -168,11 +168,11 @@ body {
     max-width: 900px;
     margin: 30px auto;
     padding: 20px;
-    min-height: calc(100vh - 150px);
+    min-height: calc(100vh - 80px);
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    padding-bottom: 40px;
+    padding-bottom: 50px;
 }
 
 .container p {
