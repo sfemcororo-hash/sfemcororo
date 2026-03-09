@@ -168,6 +168,9 @@ body {
     max-width: 900px;
     margin: 30px auto;
     padding: 20px;
+}
+
+#dashboard-section .container {
     min-height: calc(100vh - 80px);
     display: flex;
     flex-direction: column;
