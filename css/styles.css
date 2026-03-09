@@ -14,6 +14,8 @@ body {
 @media (max-width: 768px) {
     body {
         background-image: url('../fondo_movil.png');
+        background-size: 110%;
+        background-position: center top;
     }
 }
 
@@ -48,6 +50,7 @@ body {
     .login-container {
         align-items: center;
         padding: 20px;
+        padding-top: 80px;
     }
 }
 
