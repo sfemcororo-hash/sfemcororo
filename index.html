@@ -277,14 +277,21 @@
                 <div class="card">
                     <p style="color: #666; margin-bottom: 15px;"><strong>Especialidad:</strong> <span id="form-especialidad"></span></p>
                     <p style="color: #666; margin-bottom: 15px;"><strong>Año de Formación:</strong> <span id="form-anio"></span></p>
+                    <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Código Único:</label>
                     <input type="text" id="est-codigo" placeholder="Código Único (ej: EST006)">
+                    <label style="color: #666; font-size: 14px; margin-bottom: 5px;">DNI/CI:</label>
                     <input type="text" id="est-dni" placeholder="DNI/CI">
+                    <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Nombre:</label>
                     <input type="text" id="est-nombre" placeholder="Nombre">
+                    <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Apellido Paterno:</label>
                     <input type="text" id="est-apellido-paterno" placeholder="Apellido Paterno">
+                    <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Apellido Materno:</label>
                     <input type="text" id="est-apellido-materno" placeholder="Apellido Materno">
+                    <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Celular (opcional):</label>
                     <input type="tel" id="est-celular" placeholder="Celular (opcional)">
+                    <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Email (opcional):</label>
                     <input type="email" id="est-email" placeholder="Email (opcional)">
-                    <button onclick="agregarEstudiante()" class="btn-primary">Guardar Estudiante</button>
+                    <button onclick="agregarEstudiante()" class="btn-primary">Agregar Estudiante</button>
                 </div>
             </div>
         </div>
@@ -590,7 +597,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="js/tursodb.js?v=2026030834"></script>
+    <script src="js/tursodb.js?v=2026030835"></script>
     <script>
         // Máscara para formato 24 horas en campos de hora
         document.addEventListener('DOMContentLoaded', function() {
@@ -629,6 +636,6 @@
             });
         });
     </script>
-    <script src="js/app.js?v=2026030834"></script>
+    <script src="js/app.js?v=2026030835"></script>
 </body>
 </html>
