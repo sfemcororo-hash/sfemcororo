@@ -1202,7 +1202,7 @@ async function onScanSuccess(codigoUnico) {
         // Buscar primero en cache local
         let estudiante = findEstudianteInCache(codigoUnico);
         
-        // Si no está en cache Y hay conexión, buscar en BD
+        // Si no está en cache, buscar en BD con timeout de 3s
         if (!estudiante) {
             try {
                 const { data, error } = await Promise.race([
@@ -1214,7 +1214,7 @@ async function onScanSuccess(codigoUnico) {
                     estudiante = data;
                 }
             } catch (networkError) {
-                console.log('Sin conexión, usando solo cache local');
+                console.log('Conexión lenta/sin conexión, usando cache local');
             }
         }
 
@@ -1235,7 +1235,7 @@ async function onScanSuccess(codigoUnico) {
             return;
         }
 
-        // Intentar guardar en BD con timeout corto
+        // Intentar guardar online con timeout de 3s
         let guardadoOnline = false;
         try {
             const { error: insertError } = await Promise.race([
@@ -1248,11 +1248,12 @@ async function onScanSuccess(codigoUnico) {
 
             if (!insertError) {
                 guardadoOnline = true;
-                showMessage(`✓ ${formatearNombreCompleto(estudiante.nombre, estudiante.apellido_paterno, estudiante.apellido_materno)} - Asistencia registrada`, 'success');
+                showMessage(`✓ ${formatearNombreCompleto(estudiante.nombre, estudiante.apellido_paterno, estudiante.apellido_materno)} - Registrado online`, 'success');
                 setTimeout(() => loadAsistencias(currentEventId), 500);
             }
         } catch (networkError) {
-            console.log('Sin conexión, guardando offline');
+            console.log('Conexión lenta, activando modo offline');
+            activarModoOffline();
         }
         
         // Si falló online, guardar offline
@@ -1279,6 +1280,54 @@ async function onScanSuccess(codigoUnico) {
         console.error('Error general:', error);
         showMessage('Error: ' + error.message, 'error');
         setTimeout(() => { isScanning = false; }, 2000);
+    }
+}
+
+// Activar modo offline manual
+function activarModoOffline() {
+    isAdaptiveOfflineMode = true;
+    const indicator = document.getElementById('offline-indicator');
+    if (indicator) {
+        indicator.style.display = 'block';
+        indicator.textContent = '📱 Modo Offline (Conexión lenta)';
+        indicator.className = 'offline-indicator adaptive';
+    }
+    console.log('🔄 Modo offline activado por conexión lenta');
+    
+    // Verificar conexión cada 10 segundos
+    setTimeout(verificarConexion, 10000);
+}
+
+// Verificar si la conexión se restableció
+async function verificarConexion() {
+    if (!isAdaptiveOfflineMode) return;
+    
+    try {
+        const testResult = await Promise.race([
+            tursodb.query('SELECT 1'),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 2000))
+        ]);
+        
+        if (testResult && !testResult.error) {
+            // Conexión restablecida
+            isAdaptiveOfflineMode = false;
+            const indicator = document.getElementById('offline-indicator');
+            if (indicator && offlineQueue.length === 0) {
+                indicator.style.display = 'none';
+            }
+            console.log('✅ Conexión restablecida, volviendo a modo online');
+            
+            // Intentar sincronizar automáticamente
+            if (offlineQueue.length > 0) {
+                await syncOfflineQueue();
+            }
+        } else {
+            // Aún sin conexión, verificar de nuevo en 10s
+            setTimeout(verificarConexion, 10000);
+        }
+    } catch (error) {
+        // Aún sin conexión, verificar de nuevo en 10s
+        setTimeout(verificarConexion, 10000);
     }
 }
 
