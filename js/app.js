@@ -1099,7 +1099,10 @@ function iniciarMonitoreoEvento(eventoId) {
         if (!evento) return;
         
         const ahora = new Date();
-        const fechaActual = ahora.toISOString().split('T')[0];
+        const year = ahora.getFullYear();
+        const month = String(ahora.getMonth() + 1).padStart(2, '0');
+        const day = String(ahora.getDate()).padStart(2, '0');
+        const fechaActual = `${year}-${month}-${day}`;
         const horaActual = ahora.getHours().toString().padStart(2, '0') + ':' + ahora.getMinutes().toString().padStart(2, '0');
         const horaFin = evento.hora_fin.substring(0, 5);
         
@@ -1134,7 +1137,10 @@ async function validarEventoActivo(eventoId) {
     if (!evento) return false;
     
     const ahora = new Date();
-    const fechaActual = ahora.toISOString().split('T')[0];
+    const year = ahora.getFullYear();
+    const month = String(ahora.getMonth() + 1).padStart(2, '0');
+    const day = String(ahora.getDate()).padStart(2, '0');
+    const fechaActual = `${year}-${month}-${day}`;
     const horaActual = ahora.getHours().toString().padStart(2, '0') + ':' + ahora.getMinutes().toString().padStart(2, '0');
     
     // Validar fecha
