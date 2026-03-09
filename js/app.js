@@ -194,6 +194,7 @@ function addToOfflineQueue(estudianteId, eventoId, timestamp = null) {
 async function syncOfflineQueue() {
     if (syncInProgress || offlineQueue.length === 0) return;
     
+    console.log(`🔄 Iniciando sincronización de ${offlineQueue.length} registros...`);
     syncInProgress = true;
     const indicator = document.getElementById('offline-indicator');
     
@@ -204,13 +205,17 @@ async function syncOfflineQueue() {
         }
         
         // NO ELIMINAR de la cola hasta confirmar que se guardó
-        const batch = offlineQueue.slice(0, MAX_BATCH_SIZE); // Usar slice en lugar de splice
+        const batch = offlineQueue.slice(0, MAX_BATCH_SIZE);
+        console.log('Lote a sincronizar:', batch);
         let syncedCount = 0;
         let skippedCount = 0;
-        const syncedIndices = []; // Guardar índices de los que se sincronizaron
+        let errorCount = 0;
+        const syncedIndices = [];
         
         for (let i = 0; i < batch.length; i++) {
             const asistencia = batch[i];
+            console.log(`Procesando asistencia ${i+1}/${batch.length}:`, asistencia);
+            
             try {
                 // VERIFICAR SI YA EXISTE antes de insertar
                 const existente = await tursodb.query(`
@@ -218,33 +223,41 @@ async function syncOfflineQueue() {
                     WHERE estudiante_id = ? AND evento_id = ?
                 `, [asistencia.estudiante_id, asistencia.evento_id]);
                 
+                console.log('Verificación duplicado:', existente);
+                
                 if (existente && existente.rows && existente.rows.length > 0) {
                     // Ya existe - marcar para eliminar de cola
                     skippedCount++;
                     syncedIndices.push(i);
-                    console.log(`Asistencia ya existe, saltando: estudiante_id=${asistencia.estudiante_id}, evento_id=${asistencia.evento_id}`);
+                    console.log(`✅ Asistencia ya existe en BD, eliminando de cola`);
                 } else {
                     // No existe - insertar usando query directo
+                    console.log('Insertando en BD:', asistencia.estudiante_id, asistencia.evento_id, asistencia.timestamp);
                     const result = await tursodb.query(`
                         INSERT INTO asistencias (estudiante_id, evento_id, timestamp)
                         VALUES (?, ?, ?)
                     `, [asistencia.estudiante_id, asistencia.evento_id, asistencia.timestamp]);
                     
+                    console.log('Resultado INSERT:', result);
                     syncedCount++;
-                    syncedIndices.push(i); // Marcar para eliminar de cola
-                    console.log(`Asistencia sincronizada: estudiante_id=${asistencia.estudiante_id}`);
+                    syncedIndices.push(i);
+                    console.log(`✅ Asistencia sincronizada exitosamente`);
                 }
             } catch (err) {
                 // Error - NO marcar para eliminar, se quedará en la cola
-                console.error('Error sincronizando asistencia:', err);
+                errorCount++;
+                console.error('❌ Error sincronizando asistencia:', err);
             }
         }
+        
+        console.log(`Resumen: ${syncedCount} nuevas, ${skippedCount} duplicadas, ${errorCount} errores`);
         
         // Eliminar solo los que se sincronizaron correctamente (en orden inverso)
         for (let i = syncedIndices.length - 1; i >= 0; i--) {
             offlineQueue.splice(syncedIndices[i], 1);
         }
         
+        console.log(`Cola offline después de sincronizar: ${offlineQueue.length} pendientes`);
         saveOfflineQueue();
         lastSyncTime = Date.now();
         
@@ -252,12 +265,13 @@ async function syncOfflineQueue() {
             console.log(`Sincronización: ${syncedCount} nuevas, ${skippedCount} ya existían`);
             // Recargar lista de asistencias si estamos en la pantalla del escáner
             if (currentEventId && document.getElementById('scanner-section').classList.contains('active')) {
+                console.log('Recargando lista de asistencias...');
                 await loadAsistencias(currentEventId);
             }
         }
         
     } catch (error) {
-        console.error('Error en sincronización:', error);
+        console.error('❌ Error en sincronización:', error);
     } finally {
         syncInProgress = false;
         updateOfflineIndicator();
