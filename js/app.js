@@ -43,95 +43,24 @@ function measureLatency(startTime) {
 
 // Evaluar si debe activar modo offline adaptativo
 function evaluateNetworkCondition(latency) {
-    console.log(`📊 Latencia actual: ${latency.toFixed(1)}s (Óptimo: ${OPTIMAL_RESPONSE_TIME}s)`);
-    
-    if (latency > OFFLINE_THRESHOLD) {
-        consecutiveSlowRequests++;
-        console.log(`🐌 Latencia crítica detectada: ${latency.toFixed(1)}s (${consecutiveSlowRequests}/2)`);
-        
-        // CAMBIO: Solo 2 requests lentos (más agresivo)
-        if (consecutiveSlowRequests >= 2) {
-            activateAdaptiveOfflineMode();
-            return true; // Usar offline
-        }
-    } else if (latency <= OPTIMAL_RESPONSE_TIME) {
-        // Red estable - resetear contadores
-        consecutiveSlowRequests = 0;
-        if (isAdaptiveOfflineMode && latencyHistory.length >= 2) {
-            const avgRecent = latencyHistory.slice(-2).reduce((a, b) => a + b) / 2;
-            if (avgRecent <= CRITICAL_THRESHOLD) {
-                deactivateAdaptiveOfflineMode();
-            }
-        }
-    }
-    
-    return isAdaptiveOfflineMode;
+    // Evaluación de red deshabilitada - solo modo manual
+    return false;
 }
 
-// Activar modo offline adaptativo
+// Activar modo offline adaptativo - DESHABILITADO
 function activateAdaptiveOfflineMode() {
-    if (!isAdaptiveOfflineMode) {
-        isAdaptiveOfflineMode = true;
-        consecutiveSlowRequests = 0;
-        console.log('🔄 MODO OFFLINE ADAPTATIVO ACTIVADO - Red lenta detectada');
-        
-        // Mostrar indicador visual
-        const indicator = document.getElementById('offline-indicator');
-        if (indicator) {
-            indicator.style.display = 'block';
-            indicator.textContent = '🐌 Modo Offline (Red Lenta)';
-            indicator.className = 'offline-indicator adaptive';
-        }
-        
-        // Aumentar frecuencia de sincronización
-        startAdaptiveSync();
-    }
+    // Modo adaptativo deshabilitado - solo manual
+    console.log('Modo adaptativo deshabilitado');
 }
 
-// Desactivar modo offline adaptativo
+// Desactivar modo offline adaptativo - DESHABILITADO
 function deactivateAdaptiveOfflineMode() {
-    if (isAdaptiveOfflineMode) {
-        isAdaptiveOfflineMode = false;
-        console.log('✅ MODO ONLINE RESTAURADO - Red estabilizada');
-        
-        // Ocultar indicador
-        const indicator = document.getElementById('offline-indicator');
-        if (indicator && !offlineQueue.length) {
-            indicator.style.display = 'none';
-        }
-        
-        // Sincronizar inmediatamente
-        syncOfflineQueue();
-    }
+    // Modo adaptativo deshabilitado - solo manual
 }
 
-// Sincronización adaptativa más frecuente
+// Sincronización adaptativa más frecuente - DESHABILITADO
 function startAdaptiveSync() {
-    const adaptiveInterval = setInterval(async () => {
-        if (!isAdaptiveOfflineMode) {
-            clearInterval(adaptiveInterval);
-            return;
-        }
-        
-        // Probar conectividad con request rápido
-        const testStart = Date.now();
-        try {
-            await tursodb.query('SELECT 1');
-            const testLatency = measureLatency(testStart);
-            
-            if (testLatency <= CRITICAL_THRESHOLD) {
-                // Red mejoró - intentar sincronizar
-                await syncOfflineQueue();
-                
-                // Si sincronización exitosa, evaluar salir de modo offline
-                if (offlineQueue.length === 0) {
-                    evaluateNetworkCondition(testLatency);
-                }
-            }
-        } catch (error) {
-            console.log('🔄 Red aún inestable, manteniendo modo offline');
-        }
-    }, 8000); // Cada 8 segundos en modo adaptativo (más frecuente)
+    // Sincronización adaptativa deshabilitada - solo manual
 }
 
 // Mostrar estadísticas de latencia en consola
