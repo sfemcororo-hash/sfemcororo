@@ -1219,9 +1219,27 @@ async function onScanSuccess(codigoUnico) {
         }
 
         if (!estudiante) {
-            showMessage('Estudiante no encontrado', 'error');
-            setTimeout(() => { isScanning = false; }, 2000);
+            showBigAlert('Código no encontrado', 'error', 'Este código QR no corresponde a ningún estudiante registrado');
+            setTimeout(() => { isScanning = false; }, 3000);
             return;
+        }
+
+        const nombreCompleto = formatearNombreCompleto(estudiante.nombre, estudiante.apellido_paterno, estudiante.apellido_materno);
+
+        // VERIFICAR DUPLICADOS EN BD PRIMERO
+        try {
+            const existeEnBD = await Promise.race([
+                tursodb.query(`SELECT id FROM asistencias WHERE estudiante_id = ? AND evento_id = ?`, [estudiante.id, currentEventId]),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+            ]);
+            
+            if (existeEnBD && existeEnBD.rows && existeEnBD.rows.length > 0) {
+                showBigAlert(nombreCompleto, 'warning', 'YA REGISTRADO\n\nEsta persona ya tiene su asistencia registrada');
+                setTimeout(() => { isScanning = false; }, 3000);
+                return;
+            }
+        } catch (error) {
+            console.log('No se pudo verificar en BD, verificando en cola offline...');
         }
 
         // Verificar duplicados en cola offline
@@ -1230,8 +1248,8 @@ async function onScanSuccess(codigoUnico) {
         );
         
         if (existeOffline) {
-            showMessage('Asistencia ya registrada (pendiente de sincronizar)', 'warning');
-            setTimeout(() => { isScanning = false; }, 2000);
+            showBigAlert(nombreCompleto, 'warning', 'YA REGISTRADO\n\nEsta persona ya tiene su asistencia guardada (pendiente de sincronizar)');
+            setTimeout(() => { isScanning = false; }, 3000);
             return;
         }
 
@@ -1248,8 +1266,8 @@ async function onScanSuccess(codigoUnico) {
 
             if (!insertError) {
                 guardadoOnline = true;
-                showMessage(`✓ ${formatearNombreCompleto(estudiante.nombre, estudiante.apellido_paterno, estudiante.apellido_materno)} - Registrado online`, 'success');
-                setTimeout(() => loadAsistencias(currentEventId), 500);
+                showBigAlert(nombreCompleto, 'success', 'ASISTENCIA REGISTRADA\n\nRegistro guardado correctamente en el sistema');
+                setTimeout(() => loadAsistencias(currentEventId), 1000);
             }
         } catch (networkError) {
             console.log('Conexión lenta, activando modo offline');
@@ -1260,26 +1278,21 @@ async function onScanSuccess(codigoUnico) {
         if (!guardadoOnline) {
             const agregado = addToOfflineQueue(estudiante.id, currentEventId);
             if (agregado) {
-                showMessage(`📱 ${formatearNombreCompleto(estudiante.nombre, estudiante.apellido_paterno, estudiante.apellido_materno)} - Guardado offline`, 'success');
+                showBigAlert(nombreCompleto, 'success', 'ASISTENCIA GUARDADA\n\nRegistro guardado localmente\n(Se sincronizará cuando haya conexión)');
                 addToLocalAsistenciasList(estudiante);
             } else {
-                showMessage('Asistencia ya registrada', 'warning');
+                showBigAlert(nombreCompleto, 'warning', 'YA REGISTRADO\n\nEsta persona ya tiene su asistencia guardada');
             }
         }
         
         setTimeout(() => { 
             isScanning = false;
-            if (html5QrCode && html5QrCode.isScanning) {
-                // Ya está escaneando
-            } else {
-                startScanner();
-            }
-        }, 2000);
+        }, 3000);
 
     } catch (error) {
         console.error('Error general:', error);
-        showMessage('Error: ' + error.message, 'error');
-        setTimeout(() => { isScanning = false; }, 2000);
+        showBigAlert('Error del sistema', 'error', 'Ocurrió un error inesperado');
+        setTimeout(() => { isScanning = false; }, 3000);
     }
 }
 
@@ -1456,6 +1469,64 @@ function showMessage(text, type) {
         msgEl.textContent = '';
         msgEl.className = '';
     }, 3000);
+}
+
+// Mostrar aviso emergente grande en toda la pantalla
+function showBigAlert(nombre, tipo, mensaje) {
+    // Crear overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    // Crear contenido del aviso
+    const alertBox = document.createElement('div');
+    const bgColor = tipo === 'success' ? '#28a745' : tipo === 'warning' ? '#ffc107' : '#dc3545';
+    const textColor = tipo === 'warning' ? '#000' : '#fff';
+    
+    alertBox.style.cssText = `
+        background: ${bgColor};
+        color: ${textColor};
+        padding: 40px;
+        border-radius: 20px;
+        text-align: center;
+        max-width: 90%;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    `;
+    
+    alertBox.innerHTML = `
+        <div style="font-size: 4rem; margin-bottom: 20px;">
+            ${tipo === 'success' ? '✅' : tipo === 'warning' ? '⚠️' : '❌'}
+        </div>
+        <h2 style="font-size: 2rem; margin-bottom: 15px; font-weight: bold;">
+            ${nombre}
+        </h2>
+        <p style="font-size: 1.5rem; margin: 0;">
+            ${mensaje}
+        </p>
+    `;
+    
+    overlay.appendChild(alertBox);
+    document.body.appendChild(overlay);
+    
+    // Auto-cerrar después de 3 segundos
+    setTimeout(() => {
+        document.body.removeChild(overlay);
+    }, 3000);
+    
+    // Cerrar al hacer clic
+    overlay.addEventListener('click', () => {
+        document.body.removeChild(overlay);
+    });
 }
 
 // ========== GESTIÓN DE ESTUDIANTES ==========
