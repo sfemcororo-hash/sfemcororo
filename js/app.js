@@ -286,6 +286,14 @@ function startAutoSync() {
 
 // Forzar sincronización manual
 async function forceSyncOffline() {
+    const cantidadInicial = offlineQueue.length;
+    console.log(`🔄 Sincronización manual iniciada. Registros pendientes: ${cantidadInicial}`);
+    
+    if (cantidadInicial === 0) {
+        alert('ℹ️ No hay registros offline para sincronizar');
+        return;
+    }
+    
     // Usar la misma función que la sincronización automática (con validación de duplicados)
     await syncOfflineQueue();
     
@@ -294,11 +302,14 @@ async function forceSyncOffline() {
         await loadAsistencias(currentEventId);
     }
     
+    const cantidadFinal = offlineQueue.length;
+    const sincronizados = cantidadInicial - cantidadFinal;
+    
     // Mostrar resultado al usuario
     if (offlineQueue.length === 0) {
-        alert('✅ Sincronización completada\n\nTodas las asistencias offline han sido procesadas.');
+        alert(`✅ Sincronización completada\n\n${sincronizados} asistencias sincronizadas correctamente.`);
     } else {
-        alert(`⚠️ Sincronización parcial\n\nQuedan ${offlineQueue.length} asistencias pendientes.\nPuede ser por problemas de conexión.`);
+        alert(`⚠️ Sincronización parcial\n\nSincronizados: ${sincronizados}\nPendientes: ${offlineQueue.length}\n\nPuede ser por problemas de conexión.`);
     }
 }
 
