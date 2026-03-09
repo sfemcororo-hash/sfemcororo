@@ -274,12 +274,14 @@ async function syncOfflineQueue() {
             indicator.className = 'offline-indicator syncing';
         }
         
-        // Procesar en lotes pequeños para optimizar ancho de banda
-        const batch = offlineQueue.splice(0, MAX_BATCH_SIZE);
+        // NO ELIMINAR de la cola hasta confirmar que se guardó
+        const batch = offlineQueue.slice(0, MAX_BATCH_SIZE); // Usar slice en lugar de splice
         let syncedCount = 0;
         let skippedCount = 0;
+        const syncedIndices = []; // Guardar índices de los que se sincronizaron
         
-        for (const asistencia of batch) {
+        for (let i = 0; i < batch.length; i++) {
+            const asistencia = batch[i];
             try {
                 // VERIFICAR SI YA EXISTE antes de insertar
                 const existente = await tursodb.query(`
@@ -288,8 +290,9 @@ async function syncOfflineQueue() {
                 `, [asistencia.estudiante_id, asistencia.evento_id]);
                 
                 if (existente && existente.rows && existente.rows.length > 0) {
-                    // Ya existe - saltar sin error
+                    // Ya existe - marcar para eliminar de cola
                     skippedCount++;
+                    syncedIndices.push(i);
                     console.log(`Asistencia ya existe, saltando: estudiante_id=${asistencia.estudiante_id}, evento_id=${asistencia.evento_id}`);
                 } else {
                     // No existe - insertar usando query directo
@@ -299,13 +302,18 @@ async function syncOfflineQueue() {
                     `, [asistencia.estudiante_id, asistencia.evento_id, asistencia.timestamp]);
                     
                     syncedCount++;
+                    syncedIndices.push(i); // Marcar para eliminar de cola
                     console.log(`Asistencia sincronizada: estudiante_id=${asistencia.estudiante_id}`);
                 }
             } catch (err) {
-                // Error - devolver a la cola
-                offlineQueue.unshift(asistencia);
+                // Error - NO marcar para eliminar, se quedará en la cola
                 console.error('Error sincronizando asistencia:', err);
             }
+        }
+        
+        // Eliminar solo los que se sincronizaron correctamente (en orden inverso)
+        for (let i = syncedIndices.length - 1; i >= 0; i--) {
+            offlineQueue.splice(syncedIndices[i], 1);
         }
         
         saveOfflineQueue();
