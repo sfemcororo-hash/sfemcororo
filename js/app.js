@@ -1819,7 +1819,7 @@ async function generarQRsGrupoDirecto(especialidad, anio) {
                 qr.make();
                 
                 // Crear imagen SVG
-                const size = 180;
+                const size = 300;
                 const cellSize = size / qr.getModuleCount();
                 
                 let svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">`;
@@ -1851,7 +1851,7 @@ function downloadSingleQR(elementId, filename) {
     // Crear canvas para convertir SVG a PNG
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    const size = 180;
+    const size = 300;
     
     canvas.width = size;
     canvas.height = size;
@@ -1989,7 +1989,7 @@ async function downloadAllQRs() {
                 // Crear canvas para convertir SVG a PNG
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                const size = 180;
+                const size = 300;
                 
                 canvas.width = size;
                 canvas.height = size;

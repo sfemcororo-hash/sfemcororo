@@ -612,16 +612,23 @@ button {
     margin: 15px auto;
     display: flex;
     justify-content: center;
-    width: 108px;
-    height: 108px;
+    width: 180px;
+    height: 180px;
     overflow: hidden;
 }
 
 .qr-code canvas {
-    width: 108px !important;
-    height: 108px !important;
-    max-width: 108px;
-    max-height: 108px;
+    width: 180px !important;
+    height: 180px !important;
+    max-width: 180px;
+    max-height: 180px;
+}
+
+.qr-code svg {
+    width: 180px !important;
+    height: 180px !important;
+    max-width: 180px;
+    max-height: 180px;
 }
 
 .download-btn {
