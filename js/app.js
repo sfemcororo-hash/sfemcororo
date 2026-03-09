@@ -1816,8 +1816,8 @@ async function generarQRsGrupoDirecto(especialidad, anio) {
             if (qrElement && typeof QRCode !== 'undefined') {
                 new QRCode(qrElement, {
                 text: est.codigo_unico,
-                width: 180,
-                height: 180,
+                width: 300,
+                height: 300,
                 correctLevel: QRCode.CorrectLevel.H
             });
         }
@@ -1831,21 +1831,9 @@ function downloadSingleQR(elementId, filename) {
     const canvas = document.querySelector(`#${elementId} canvas`);
     if (!canvas) return;
     
-    // Crear canvas de alta resolución (150 DPI)
-    const highResCanvas = document.createElement('canvas');
-    const ctx = highResCanvas.getContext('2d');
-    const scale = 150 / 72; // Factor de escala para 150 DPI
-    
-    highResCanvas.width = canvas.width * scale;
-    highResCanvas.height = canvas.height * scale;
-    
-    ctx.imageSmoothingEnabled = false;
-    ctx.scale(scale, scale);
-    ctx.drawImage(canvas, 0, 0);
-    
     const link = document.createElement('a');
     link.download = `${filename}.png`;
-    link.href = highResCanvas.toDataURL('image/png');
+    link.href = canvas.toDataURL('image/png', 1.0);
     link.click();
 }
 
@@ -1889,21 +1877,9 @@ async function downloadAllQRs() {
                 const nombreCompleto = nombreElement ? nombreElement.textContent.trim() : `Estudiante_${i + 1}`;
                 const nombreArchivo = nombreCompleto.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
                 
-                // Crear canvas de alta resolución (150 DPI)
-                const highResCanvas = document.createElement('canvas');
-                const ctx = highResCanvas.getContext('2d');
-                const scale = 150 / 72; // Factor de escala para 150 DPI
-                
-                highResCanvas.width = canvas.width * scale;
-                highResCanvas.height = canvas.height * scale;
-                
-                ctx.imageSmoothingEnabled = false;
-                ctx.scale(scale, scale);
-                ctx.drawImage(canvas, 0, 0);
-                
-                // Convertir canvas de alta resolución a blob
+                // Convertir canvas a blob con máxima calidad
                 const blob = await new Promise(resolve => {
-                    highResCanvas.toBlob(resolve, 'image/png', 1.0);
+                    canvas.toBlob(resolve, 'image/png', 1.0);
                 });
                 
                 if (blob && blob.size > 100) {
