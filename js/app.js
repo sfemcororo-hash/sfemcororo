@@ -1125,6 +1125,23 @@ async function validarEventoActivo(eventoId) {
 }
 
 function startScanner() {
+    const readerDiv = document.getElementById('reader');
+    
+    // Mostrar opciones: Cámara o Subir Imagen
+    readerDiv.innerHTML = `
+        <div style="padding: 20px; background: white; border-radius: 10px; text-align: center;">
+            <button onclick="startCamera()" style="padding: 15px 30px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin: 10px; width: 200px;">
+                📷 Usar Cámara
+            </button>
+            <br>
+            <button onclick="showFileUpload()" style="padding: 15px 30px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin: 10px; width: 200px;">
+                🖼️ Subir Imagen
+            </button>
+        </div>
+    `;
+}
+
+function startCamera() {
     html5QrCode = new Html5Qrcode("reader");
     
     Html5Qrcode.getCameras().then(cameras => {
@@ -1136,15 +1153,15 @@ function startScanner() {
                 () => {}
             ).catch(err => {
                 showMessage('Error al iniciar cámara. Usa la opción de subir imagen.', 'error');
-                showFileUpload();
+                startScanner();
             });
         } else {
             showMessage('No se detectó cámara. Usa la opción de subir imagen.', 'warning');
-            showFileUpload();
+            startScanner();
         }
     }).catch(err => {
         showMessage('No se puede acceder a la cámara. Usa la opción de subir imagen.', 'error');
-        showFileUpload();
+        startScanner();
     });
 }
 
