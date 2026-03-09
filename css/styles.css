@@ -659,7 +659,7 @@ button {
 }
 
 .module-card {
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    background: linear-gradient(135deg, rgba(0, 123, 255, 0.85) 0%, rgba(0, 86, 179, 0.85) 100%);
     border-radius: 15px;
     padding: 40px 30px;
     text-align: center;
@@ -667,6 +667,8 @@ button {
     transition: all 0.3s ease;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     color: white;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .module-card:hover {
