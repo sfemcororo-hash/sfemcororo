@@ -2766,7 +2766,7 @@ async function generarQRsPersonalDirecto(tipoPersonal) {
             <h3>${nombreCompleto}</h3>
             <p><strong>${person.codigo_unico}</strong></p>
             <div class="qr-code" id="qr-${index}"></div>
-            <button class="download-btn" onclick="downloadSingleQR('qr-${index}', '${nombreCompleto.replace(/\s+/g, '_')}')">📥 Descargar</button>
+            <button class="download-btn" onclick="downloadSingleQRPersonal('qr-${index}', '${nombreCompleto.replace(/\s+/g, '_')}')">📥 Descargar</button>
         `;
         container.appendChild(qrItem);
 
@@ -2801,6 +2801,51 @@ async function generarQRsPersonalDirecto(tipoPersonal) {
 
         qrCodesGenerated.push({ id: `qr-${index}`, nombre: nombreCompleto.replace(/\s+/g, '_') });
     });
+}
+
+function downloadSingleQRPersonal(elementId, filename) {
+    const svgElement = document.querySelector(`#${elementId} svg`);
+    if (!svgElement) return;
+    
+    // Crear canvas para convertir SVG a PNG - 2.5cm a 300 DPI = 295px
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const size = 295; // 2.5cm a 300 DPI
+    
+    canvas.width = size;
+    canvas.height = size;
+    
+    // Convertir SVG a imagen
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    
+    const img = new Image();
+    img.onload = function() {
+        ctx.drawImage(img, 0, 0, size, size);
+        
+        // Convertir a blob con metadatos DPI
+        canvas.toBlob(function(blob) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const arrayBuffer = e.target.result;
+                const uint8Array = new Uint8Array(arrayBuffer);
+                
+                // Modificar metadatos PNG para 300 DPI
+                const modifiedBuffer = setPNGDPI(uint8Array, 300);
+                
+                const newBlob = new Blob([modifiedBuffer], { type: 'image/png' });
+                const link = document.createElement('a');
+                link.download = `${filename}.png`;
+                link.href = URL.createObjectURL(newBlob);
+                link.click();
+                URL.revokeObjectURL(link.href);
+                URL.revokeObjectURL(url);
+            };
+            reader.readAsArrayBuffer(blob);
+        }, 'image/png', 1.0);
+    };
+    img.src = url;
 }
 
 let currentTipoPersonal = null;
