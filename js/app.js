@@ -165,10 +165,10 @@ function updateOfflineIndicator() {
 }
 
 // Agregar asistencia a cola offline
-function addToOfflineQueue(estudianteId, eventoId, timestamp = null) {
+function addToOfflineQueue(personaId, eventoId, timestamp = null, tipo = 'estudiante') {
     // VERIFICAR DUPLICADOS EN COLA OFFLINE ANTES DE AGREGAR
     const yaExisteEnCola = offlineQueue.find(a => 
-        a.estudiante_id === estudianteId && a.evento_id === eventoId
+        a.persona_id === personaId && a.evento_id === eventoId && a.tipo === tipo
     );
     
     if (yaExisteEnCola) {
@@ -178,9 +178,10 @@ function addToOfflineQueue(estudianteId, eventoId, timestamp = null) {
     
     const asistencia = {
         id: Date.now() + Math.random(), // ID único temporal
-        estudiante_id: estudianteId,
+        persona_id: personaId,
         evento_id: eventoId,
         timestamp: timestamp || new Date().toISOString(),
+        tipo: tipo,
         created_offline: true
     };
     
@@ -1225,18 +1226,41 @@ async function onScanSuccess(qrData) {
             }
         }
 
+        // Si no es estudiante, buscar en personal administrativo
+        let personal = null;
         if (!estudiante) {
+            try {
+                const result = await Promise.race([
+                    tursodb.query('SELECT * FROM administrativos WHERE codigo_unico = ?', [codigoUnico]),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+                ]);
+                
+                if (result && result.rows && result.rows.length > 0) {
+                    personal = result.rows[0];
+                }
+            } catch (networkError) {
+                console.log('Conexión lenta/sin conexión para personal');
+            }
+        }
+
+        if (!estudiante && !personal) {
             showBigAlert('Código no encontrado', 'error', 'Este código QR no corresponde a ningún estudiante registrado');
             setTimeout(() => { isScanning = false; }, 5000);
             return;
         }
 
-        const nombreCompleto = formatearNombreCompleto(estudiante.nombre, estudiante.apellido_paterno, estudiante.apellido_materno);
+        const persona = estudiante || personal;
+        const nombreCompleto = formatearNombreCompleto(persona.nombre, persona.apellido_paterno, persona.apellido_materno);
+        const tipoPersona = estudiante ? 'estudiante' : 'personal';
+        const personaId = persona.id;
 
         // VERIFICAR DUPLICADOS EN BD PRIMERO
         try {
+            const tabla = estudiante ? 'asistencias' : 'asistencias_personal';
+            const campo = estudiante ? 'estudiante_id' : 'personal_id';
+            
             const existeEnBD = await Promise.race([
-                tursodb.query(`SELECT id FROM asistencias WHERE estudiante_id = ? AND evento_id = ?`, [estudiante.id, currentEventId]),
+                tursodb.query(`SELECT id FROM ${tabla} WHERE ${campo} = ? AND evento_id = ?`, [personaId, currentEventId]),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
             ]);
             
@@ -1251,7 +1275,7 @@ async function onScanSuccess(qrData) {
 
         // Verificar duplicados en cola offline
         const existeOffline = offlineQueue.find(a => 
-            a.estudiante_id === estudiante.id && a.evento_id === currentEventId
+            a.persona_id === personaId && a.evento_id === currentEventId && a.tipo === tipoPersona
         );
         
         if (existeOffline) {
@@ -1263,11 +1287,11 @@ async function onScanSuccess(qrData) {
         // Intentar guardar online con timeout de 3s
         let guardadoOnline = false;
         try {
+            const tabla = estudiante ? 'asistencias' : 'asistencias_personal';
+            const campo = estudiante ? 'estudiante_id' : 'personal_id';
+            
             const { error: insertError } = await Promise.race([
-                tursodb.from('asistencias').insert({
-                    estudiante_id: estudiante.id,
-                    evento_id: currentEventId
-                }),
+                tursodb.query(`INSERT INTO ${tabla} (${campo}, evento_id, timestamp) VALUES (?, ?, ?)`, [personaId, currentEventId, new Date().toISOString()]),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
             ]);
 
@@ -1283,10 +1307,10 @@ async function onScanSuccess(qrData) {
         
         // Si falló online, guardar offline
         if (!guardadoOnline) {
-            const agregado = addToOfflineQueue(estudiante.id, currentEventId);
+            const agregado = addToOfflineQueue(personaId, currentEventId, null, tipoPersona);
             if (agregado) {
                 showBigAlert(nombreCompleto, 'success', 'ASISTENCIA GUARDADA\n\nRegistro guardado localmente\n(Se sincronizará cuando haya conexión)');
-                addToLocalAsistenciasList(estudiante);
+                addToLocalAsistenciasList(persona, tipoPersona);
             } else {
                 showBigAlert(nombreCompleto, 'warning', 'YA REGISTRADO\n\nEsta persona ya tiene su asistencia guardada');
             }
@@ -1403,7 +1427,7 @@ async function loadAsistencias(eventoId) {
 }
 
 // Agregar asistencia a lista local (para mostrar inmediatamente)
-function addToLocalAsistenciasList(estudiante) {
+function addToLocalAsistenciasList(persona, tipo = 'estudiante') {
     const listEl = document.getElementById('asistencias-list');
     if (!listEl) return;
     
@@ -1418,14 +1442,18 @@ function addToLocalAsistenciasList(estudiante) {
         hour12: false
     });
     
+    const tipoIcon = tipo === 'estudiante' ? '🎓' : '👔';
+    const especialidadOCargo = tipo === 'estudiante' ? persona.especialidad : persona.cargo;
+    const anioOTipo = tipo === 'estudiante' ? persona.anio_formacion : persona.personal;
+    
     item.innerHTML = `
         <div style="width: 100%;">
-            <strong style="font-size: 16px; color: #333;">${formatearNombreCompleto(estudiante.nombre, estudiante.apellido_paterno, estudiante.apellido_materno)}</strong><br>
+            <strong style="font-size: 16px; color: #333;">${tipoIcon} ${formatearNombreCompleto(persona.nombre, persona.apellido_paterno, persona.apellido_materno)}</strong><br>
             <small style="color: #666; font-size: 13px;">
-                📋 ${estudiante.codigo_unico} | 
-                🆔 ${formatearCampoOpcional(estudiante.dni, 'Sin DNI')} | 
-                🎓 ${formatearCampoOpcional(estudiante.especialidad, 'Sin especialidad')} | 
-                📅 Año ${formatearCampoOpcional(estudiante.anio_formacion, 'N/A')}
+                📋 ${persona.codigo_unico} | 
+                🆔 ${formatearCampoOpcional(persona.dni, 'Sin DNI')} | 
+                ${tipo === 'estudiante' ? '🎓' : '💼'} ${formatearCampoOpcional(especialidadOCargo, 'Sin especialidad')} | 
+                📅 ${formatearCampoOpcional(anioOTipo, 'N/A')}
             </small>
         </div>
         <span style="color: #ff9800; font-weight: bold;">📱 ${time}</span>
