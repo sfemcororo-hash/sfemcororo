@@ -1849,7 +1849,7 @@ async function generarQRsGrupoDirecto(especialidad, anio) {
         setTimeout(() => {
             const qrElement = document.getElementById(`qr-${index}`);
             if (qrElement && typeof qrcode !== 'undefined') {
-                const qrData = `${est.codigo_unico}|${est.especialidad}|${formatearNombreCompleto(est.nombre, est.apellido_paterno, est.apellido_materno)}|ESFM Simón Bolívar de Cororo`;
+                const qrData = `${est.codigo_unico}|${est.especialidad}|${formatearNombreCompleto(est.nombre, est.apellido_paterno, est.apellido_materno)}`;
                 const qr = qrcode(0, 'M'); // Tipo 0 (automático), corrección media
                 qr.addData(qrData);
                 qr.make();
@@ -1884,10 +1884,10 @@ function downloadSingleQR(elementId, filename) {
     const svgElement = document.querySelector(`#${elementId} svg`);
     if (!svgElement) return;
     
-    // Crear canvas para convertir SVG a PNG
+    // Crear canvas para convertir SVG a PNG - 2.5cm a 300 DPI = 295px
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    const size = 360;
+    const size = 295; // 2.5cm a 300 DPI
     
     canvas.width = size;
     canvas.height = size;
@@ -1908,8 +1908,8 @@ function downloadSingleQR(elementId, filename) {
                 const arrayBuffer = e.target.result;
                 const uint8Array = new Uint8Array(arrayBuffer);
                 
-                // Modificar metadatos PNG para 150 DPI
-                const modifiedBuffer = setPNGDPI(uint8Array, 150);
+                // Modificar metadatos PNG para 300 DPI
+                const modifiedBuffer = setPNGDPI(uint8Array, 300);
                 
                 const newBlob = new Blob([modifiedBuffer], { type: 'image/png' });
                 const link = document.createElement('a');
@@ -2022,10 +2022,10 @@ async function downloadAllQRs() {
                 const nombreCompleto = nombreElement ? nombreElement.textContent.trim() : `Estudiante_${i + 1}`;
                 const nombreArchivo = nombreCompleto.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
                 
-                // Crear canvas para convertir SVG a PNG
+                // Crear canvas para convertir SVG a PNG - 2.5cm a 300 DPI = 295px
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                const size = 360;
+                const size = 295; // 2.5cm a 300 DPI
                 
                 canvas.width = size;
                 canvas.height = size;
@@ -2804,7 +2804,7 @@ async function generarQRsPersonalDirecto(tipoPersonal) {
         setTimeout(() => {
             const qrElement = document.getElementById(`qr-${index}`);
             if (qrElement && typeof qrcode !== 'undefined') {
-                const qrData = `${person.codigo_unico}|${person.cargo}|${nombreCompleto}|ESFM Simón Bolívar de Cororo`;
+                const qrData = `${person.codigo_unico}|${person.cargo}|${nombreCompleto}`;
                 const qr = qrcode(0, 'M');
                 qr.addData(qrData);
                 qr.make();
