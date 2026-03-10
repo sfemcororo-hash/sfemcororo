@@ -1899,7 +1899,7 @@ function downloadSingleQR(elementId, filename) {
     
     const img = new Image();
     img.onload = function() {
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, 0, 0, size, size);
         
         // Convertir a blob con metadatos DPI
         canvas.toBlob(function(blob) {
@@ -2038,7 +2038,7 @@ async function downloadAllQRs() {
                 const img = new Image();
                 await new Promise((resolve, reject) => {
                     img.onload = () => {
-                        ctx.drawImage(img, 0, 0);
+                        ctx.drawImage(img, 0, 0, size, size);
                         URL.revokeObjectURL(url);
                         resolve();
                     };
