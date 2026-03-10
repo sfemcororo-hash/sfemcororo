@@ -2768,7 +2768,6 @@ async function generarQRsPersonalDirecto(tipoPersonal) {
         qrItem.innerHTML = `
             <h3>${nombreCompleto}</h3>
             <p><strong>${person.codigo_unico}</strong></p>
-            <p><small>${person.cargo}</small></p>
             <div class="qr-code" id="qr-${index}"></div>
             <button class="download-btn" onclick="downloadSingleQR('qr-${index}', '${nombreCompleto.replace(/\s+/g, '_')}')">📥 Descargar</button>
         `;
