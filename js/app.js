@@ -2014,6 +2014,7 @@ async function generarQRsGrupo() {
 async function generarQRsGrupoDirecto(especialidad, anio) {
     currentEspecialidad = especialidad;
     currentAnio = anio;
+    currentTipoPersonal = null; // Limpiar variable de personal
     
     hideAllSections();
     document.getElementById('generar-qr-section').classList.add('active');
@@ -2224,17 +2225,22 @@ async function downloadAllQRs() {
     
     // Determinar nombre del ZIP según el contexto
     let nombreZip;
-    if (currentEspecialidad && currentAnio) {
+    console.log('📦 Generando ZIP - currentEspecialidad:', currentEspecialidad, 'currentAnio:', currentAnio, 'currentTipoPersonal:', currentTipoPersonal);
+    
+    if (currentTipoPersonal) {
+        // Para personal administrativo (verificar primero)
+        const tipoLimpio = currentTipoPersonal.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_').toUpperCase();
+        nombreZip = `QRs_${tipoLimpio}.zip`;
+        console.log('📦 ZIP de Personal:', nombreZip);
+    } else if (currentEspecialidad && currentAnio) {
         // Para estudiantes
         const especialidadLimpia = currentEspecialidad.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_').toUpperCase();
         nombreZip = `QRs_${especialidadLimpia}_${currentAnio}.zip`;
-    } else if (currentTipoPersonal) {
-        // Para personal administrativo
-        const tipoLimpio = currentTipoPersonal.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_').toUpperCase();
-        nombreZip = `QRs_${tipoLimpio}.zip`;
+        console.log('📦 ZIP de Estudiantes:', nombreZip);
     } else {
         // Fallback genérico
         nombreZip = `QRs_${new Date().toISOString().split('T')[0]}.zip`;
+        console.log('📦 ZIP genérico:', nombreZip);
     }
     
     const container = document.getElementById('qr-container');
@@ -3250,6 +3256,8 @@ async function procesarExcelPersonal() {
 
 async function generarQRsPersonalDirecto(tipoPersonal) {
     currentTipoPersonal = tipoPersonal; // Guardar tipo para el ZIP
+    currentEspecialidad = null; // Limpiar variables de estudiantes
+    currentAnio = null; // Limpiar variables de estudiantes
     
     hideAllSections();
     document.getElementById('generar-qr-section').classList.add('active');
