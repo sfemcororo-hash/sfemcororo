@@ -214,6 +214,27 @@ h3 { color: #2c3e50; margin-bottom: 15px; }
     margin-bottom: 30px;
 }
 
+/* Estilos especiales para el título del login */
+.login-container h1 .title-line1 {
+    background: linear-gradient(45deg, #FFD700, #FFA500, #FF6347);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 900;
+    text-shadow: none;
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+}
+
+.login-container h1 .title-line2 {
+    background: linear-gradient(45deg, #00CED1, #20B2AA, #4682B4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 900;
+    text-shadow: none;
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+}
+
 @media (max-width: 768px) {
     .login-container h1 {
         font-size: 1.5rem;
