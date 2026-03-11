@@ -98,8 +98,8 @@ body {
     text-shadow: none;
     filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
     display: inline-block;
-    -webkit-text-stroke: 1px white;
-    text-stroke: 1px white;
+    -webkit-text-stroke: 0.5px white;
+    text-stroke: 0.5px white;
 }
 
 @media (max-width: 768px) {
@@ -264,8 +264,8 @@ h3 { color: #2c3e50; margin-bottom: 15px; }
     text-shadow: none;
     filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
     display: inline-block;
-    -webkit-text-stroke: 1px white;
-    text-stroke: 1px white;
+    -webkit-text-stroke: 0.5px white;
+    text-stroke: 0.5px white;
 }
 
 @media (max-width: 768px) {
