@@ -163,11 +163,12 @@ class TursoDB {
         // Verificar si la tabla estudiantes existe y tiene la estructura correcta
         const tableInfo = await this.query(`PRAGMA table_info(estudiantes)`);
         const hasAnioFormacion = tableInfo.rows.some(col => col.name === 'anio_formacion');
+        const hasPassword = tableInfo.rows.some(col => col.name === 'password');
         
-        if (!hasAnioFormacion) {
+        if (!hasAnioFormacion || !hasPassword) {
             console.log('Actualizando estructura de tabla estudiantes...');
             
-            // Crear nueva tabla con estructura correcta
+            // Crear nueva tabla con estructura correcta incluyendo password
             await this.query(`
                 CREATE TABLE IF NOT EXISTS estudiantes_nueva (
                     id TEXT PRIMARY KEY,
@@ -180,6 +181,7 @@ class TursoDB {
                     anio_formacion TEXT NOT NULL,
                     celular TEXT,
                     email TEXT,
+                    password TEXT NOT NULL DEFAULT 'estudiante123',
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP
                 )
             `);
@@ -188,7 +190,7 @@ class TursoDB {
             const existingData = await this.query(`SELECT COUNT(*) as count FROM estudiantes`);
             if (existingData.rows[0]?.count > 0) {
                 await this.query(`
-                    INSERT INTO estudiantes_nueva (id, codigo_unico, dni, nombre, apellido_paterno, apellido_materno, especialidad, anio_formacion, celular, email, created_at)
+                    INSERT INTO estudiantes_nueva (id, codigo_unico, dni, nombre, apellido_paterno, apellido_materno, especialidad, anio_formacion, celular, email, password, created_at)
                     SELECT id, codigo_unico, dni, nombre, apellido_paterno, apellido_materno, especialidad, 
                            CASE 
                                WHEN anio = 1 THEN 'PRIMERO'
@@ -198,7 +200,9 @@ class TursoDB {
                                WHEN anio = 5 THEN 'QUINTO'
                                ELSE COALESCE(anio_formacion, 'PRIMERO')
                            END as anio_formacion,
-                           celular, email, created_at
+                           celular, email, 
+                           COALESCE(password, 'estudiante123') as password,
+                           created_at
                     FROM estudiantes
                 `);
             }
@@ -208,7 +212,7 @@ class TursoDB {
             await this.query(`ALTER TABLE estudiantes RENAME TO estudiantes_old`);
             await this.query(`ALTER TABLE estudiantes_nueva RENAME TO estudiantes`);
             
-            console.log('Estructura de tabla estudiantes actualizada correctamente');
+            console.log('Estructura de tabla estudiantes actualizada correctamente con columna password');
         } else {
             // Crear tabla con estructura correcta si no existe
             await this.query(`
@@ -223,6 +227,7 @@ class TursoDB {
                     anio_formacion TEXT NOT NULL,
                     celular TEXT,
                     email TEXT,
+                    password TEXT NOT NULL DEFAULT 'estudiante123',
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP
                 )
             `);

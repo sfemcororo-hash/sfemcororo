@@ -720,7 +720,8 @@ async function procesarExcelInterno(file, resultadoDiv, estudiantesAnteriores = 
                     especialidad: fila[5] ? fila[5].toString().toUpperCase().trim() : '',
                     anio_formacion: fila[6] ? fila[6].toString().toUpperCase().trim() : '',
                     celular: fila[7] ? fila[7].toString().trim() : null,
-                    email: fila[8] ? fila[8].toString().toLowerCase().trim() : null
+                    email: fila[8] ? fila[8].toString().toLowerCase().trim() : null,
+                    password: fila[9] ? fila[9].toString().trim() : 'estudiante123' // Nueva columna de contraseña
                 };
                 
                 // Detectar y corregir datos mal estructurados (nombre en posición incorrecta)
@@ -1680,8 +1681,9 @@ async function agregarEstudiante() {
     const apellidoMaterno = document.getElementById('est-apellido-materno').value;
     const celular = document.getElementById('est-celular').value;
     const email = document.getElementById('est-email').value;
+    const password = document.getElementById('est-password').value;
 
-    if (!codigo || !dni || !nombre || !apellidoPaterno || !apellidoMaterno) {
+    if (!codigo || !dni || !nombre || !apellidoPaterno || !apellidoMaterno || !password) {
         alert('Completa todos los campos obligatorios');
         return;
     }
@@ -1694,6 +1696,7 @@ async function agregarEstudiante() {
         apellido_materno: apellidoMaterno,
         celular: celular || null,
         email: email || null,
+        password: password,
         especialidad: currentEspecialidad,
         anio_formacion: currentAnio
     });
@@ -1710,6 +1713,7 @@ async function agregarEstudiante() {
     document.getElementById('est-apellido-materno').value = '';
     document.getElementById('est-celular').value = '';
     document.getElementById('est-email').value = '';
+    document.getElementById('est-password').value = 'estudiante123';
 
     alert('✓ Estudiante agregado correctamente');
     showListaEstudiantes();
@@ -1724,8 +1728,9 @@ async function actualizarEstudiante() {
     const apellidoMaterno = document.getElementById('edit-est-apellido-materno').value || 'SIN DATO';
     const celular = document.getElementById('edit-est-celular').value || null;
     const email = document.getElementById('edit-est-email').value || null;
+    const password = document.getElementById('edit-est-password').value;
 
-    if (!codigo || !dni || !nombre || !apellidoPaterno) {
+    if (!codigo || !dni || !nombre || !apellidoPaterno || !password) {
         alert('Completa todos los campos obligatorios');
         return;
     }
@@ -1733,9 +1738,9 @@ async function actualizarEstudiante() {
     try {
         await tursodb.query(`
             UPDATE estudiantes 
-            SET codigo_unico = ?, dni = ?, nombre = ?, apellido_paterno = ?, apellido_materno = ?, celular = ?, email = ?
+            SET codigo_unico = ?, dni = ?, nombre = ?, apellido_paterno = ?, apellido_materno = ?, celular = ?, email = ?, password = ?
             WHERE id = ?
-        `, [codigo, dni, nombre, apellidoPaterno, apellidoMaterno, celular, email, id]);
+        `, [codigo, dni, nombre, apellidoPaterno, apellidoMaterno, celular, email, password, id]);
 
         alert('✓ Estudiante actualizado correctamente');
         showGestionEstudiantesCompleto();
@@ -3382,6 +3387,7 @@ async function editarEstudiante(estudianteId) {
         document.getElementById('edit-est-apellido-materno').value = estudiante.apellido_materno || '';
         document.getElementById('edit-est-celular').value = estudiante.celular || '';
         document.getElementById('edit-est-email').value = estudiante.email || '';
+        document.getElementById('edit-est-password').value = estudiante.password || 'estudiante123';
     } catch (error) {
         alert('Error cargando estudiante: ' + error.message);
     }
