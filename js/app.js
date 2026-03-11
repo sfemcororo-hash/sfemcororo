@@ -1148,6 +1148,7 @@ function startScanner() {
 function startCameraScanner() {
     const scannerContainer = document.getElementById('scanner-container');
     const fileContainer = document.getElementById('file-container');
+    const btnProcessImage = document.getElementById('btn-process-image');
     
     if (scannerContainer) {
         scannerContainer.innerHTML = '<div id="camera-reader"></div>';
@@ -1155,6 +1156,12 @@ function startCameraScanner() {
     }
     if (fileContainer) {
         fileContainer.style.display = 'none';
+    }
+    
+    // OCULTAR el botón Procesar cuando esté en modo cámara
+    if (btnProcessImage) {
+        btnProcessImage.style.display = 'none';
+        console.log('✅ Botón Procesar OCULTO en modo cámara');
     }
     
     // Actualizar botones
@@ -1198,6 +1205,7 @@ function initializeCameraScanner() {
 function showFileUpload() {
     const scannerContainer = document.getElementById('scanner-container');
     const fileContainer = document.getElementById('file-container');
+    const btnProcessImage = document.getElementById('btn-process-image');
     
     if (scannerContainer) {
         scannerContainer.style.display = 'none';
@@ -1218,19 +1226,16 @@ function showFileUpload() {
         btnFile.textContent = '📁 Archivo Activo';
     }
     
+    // MOSTRAR el botón Procesar cuando esté en modo archivo
+    if (btnProcessImage) {
+        btnProcessImage.style.display = 'inline-block';
+        btnProcessImage.onclick = processSelectedImage;
+        console.log('✅ Botón Procesar VISIBLE y configurado');
+    }
+    
     // Detener cámara si está activa
     if (html5QrCode && html5QrCode.isScanning) {
         html5QrCode.stop().catch(console.error);
-    }
-    
-    // Configurar botón de procesar imagen - ASEGURAR QUE ESTÉ VISIBLE
-    const btnProcessImage = document.getElementById('btn-process-image');
-    if (btnProcessImage) {
-        btnProcessImage.onclick = processSelectedImage;
-        btnProcessImage.style.display = 'inline-block'; // Forzar visibilidad
-        console.log('✅ Botón Procesar configurado y visible');
-    } else {
-        console.error('❌ Botón btn-process-image no encontrado');
     }
 }
 
