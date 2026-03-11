@@ -2015,10 +2015,17 @@ async function generarQRsGrupoDirecto(especialidad, anio) {
     currentEspecialidad = especialidad;
     currentAnio = anio;
     currentTipoPersonal = null; // Limpiar variable de personal
+    origenQR = 'estudiantes'; // Marcar origen
     
     hideAllSections();
     document.getElementById('generar-qr-section').classList.add('active');
     updateAllUserDropdowns();
+    
+    // Actualizar botón volver para estudiantes
+    const volverBtn = document.querySelector('#generar-qr-section .header-right button');
+    if (volverBtn) {
+        volverBtn.onclick = () => showEstudiantes();
+    }
     
     const container = document.getElementById('qr-container');
     container.innerHTML = '<p style="color: white;">Generando QRs...</p>';
@@ -3258,10 +3265,17 @@ async function generarQRsPersonalDirecto(tipoPersonal) {
     currentTipoPersonal = tipoPersonal; // Guardar tipo para el ZIP
     currentEspecialidad = null; // Limpiar variables de estudiantes
     currentAnio = null; // Limpiar variables de estudiantes
+    origenQR = 'personal'; // Marcar origen
     
     hideAllSections();
     document.getElementById('generar-qr-section').classList.add('active');
     updateAllUserDropdowns();
+    
+    // Actualizar botón volver para personal
+    const volverBtn = document.querySelector('#generar-qr-section .header-right button');
+    if (volverBtn) {
+        volverBtn.onclick = () => showPersonal();
+    }
     
     const container = document.getElementById('qr-container');
     container.innerHTML = '<p style="color: white;">Generando QRs...</p>';
@@ -3391,6 +3405,7 @@ function downloadSingleQRPersonal(elementId, filename) {
 }
 
 let currentTipoPersonal = null;
+let origenQR = 'estudiantes'; // Guardar origen: 'estudiantes' o 'personal'
 
 function agregarPersonalA(tipoPersonal) {
     currentTipoPersonal = tipoPersonal;
