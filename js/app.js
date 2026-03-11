@@ -888,30 +888,24 @@ function hideAllSections() {
 
 async function crearEvento() {
     const nombre = document.getElementById('evento-nombre').value;
-    const fechaInicio = document.getElementById('evento-fecha-inicio').value;
-    const fechaFin = document.getElementById('evento-fecha-fin').value;
+    const fecha = document.getElementById('evento-fecha').value;
     const horaInicio = document.getElementById('evento-hora-inicio').value;
     const horaFin = document.getElementById('evento-hora-fin').value;
 
-    if (!nombre || !fechaInicio || !fechaFin || !horaInicio || !horaFin) {
+    if (!nombre || !fecha || !horaInicio || !horaFin) {
         alert('Completa todos los campos obligatorios');
         return;
     }
 
-    if (new Date(fechaFin) < new Date(fechaInicio)) {
-        alert('La fecha fin no puede ser anterior a la fecha inicio');
-        return;
-    }
-
-    if (fechaInicio === fechaFin && horaFin <= horaInicio) {
+    if (horaFin <= horaInicio) {
         alert('La hora fin debe ser posterior a la hora inicio');
         return;
     }
 
     await tursodb.from('eventos').insert({
         nombre,
-        fecha_inicio: fechaInicio,
-        fecha_fin: fechaFin,
+        fecha_inicio: fecha,
+        fecha_fin: fecha, // Misma fecha para inicio y fin
         hora_inicio: horaInicio,
         hora_fin: horaFin,
         imagen_url: null,
@@ -920,8 +914,7 @@ async function crearEvento() {
     });
 
     document.getElementById('evento-nombre').value = '';
-    document.getElementById('evento-fecha-inicio').value = '';
-    document.getElementById('evento-fecha-fin').value = '';
+    document.getElementById('evento-fecha').value = '';
     document.getElementById('evento-hora-inicio').value = '08:00';
     document.getElementById('evento-hora-fin').value = '18:00';
 
@@ -2095,8 +2088,7 @@ async function editarEvento(eventoId) {
         
         document.getElementById('edit-evento-id').value = evento.id;
         document.getElementById('edit-evento-nombre').value = evento.nombre;
-        document.getElementById('edit-evento-fecha-inicio').value = evento.fecha_inicio.split('T')[0];
-        document.getElementById('edit-evento-fecha-fin').value = evento.fecha_fin.split('T')[0];
+        document.getElementById('edit-evento-fecha').value = evento.fecha_inicio.split('T')[0];
         document.getElementById('edit-evento-hora-inicio').value = evento.hora_inicio;
         document.getElementById('edit-evento-hora-fin').value = evento.hora_fin;
     } catch (error) {
@@ -2107,22 +2099,16 @@ async function editarEvento(eventoId) {
 async function actualizarEvento() {
     const id = document.getElementById('edit-evento-id').value;
     const nombre = document.getElementById('edit-evento-nombre').value;
-    const fechaInicio = document.getElementById('edit-evento-fecha-inicio').value;
-    const fechaFin = document.getElementById('edit-evento-fecha-fin').value;
+    const fecha = document.getElementById('edit-evento-fecha').value;
     const horaInicio = document.getElementById('edit-evento-hora-inicio').value;
     const horaFin = document.getElementById('edit-evento-hora-fin').value;
 
-    if (!nombre || !fechaInicio || !fechaFin || !horaInicio || !horaFin) {
+    if (!nombre || !fecha || !horaInicio || !horaFin) {
         alert('Completa todos los campos obligatorios');
         return;
     }
 
-    if (new Date(fechaFin) < new Date(fechaInicio)) {
-        alert('La fecha fin no puede ser anterior a la fecha inicio');
-        return;
-    }
-
-    if (fechaInicio === fechaFin && horaFin <= horaInicio) {
+    if (horaFin <= horaInicio) {
         alert('La hora fin debe ser posterior a la hora inicio');
         return;
     }
@@ -2132,7 +2118,7 @@ async function actualizarEvento() {
             UPDATE eventos 
             SET nombre = ?, fecha_inicio = ?, fecha_fin = ?, hora_inicio = ?, hora_fin = ?
             WHERE id = ?
-        `, [nombre, fechaInicio, fechaFin, horaInicio, horaFin, id]);
+        `, [nombre, fecha, fecha, horaInicio, horaFin, id]); // Usar la misma fecha para inicio y fin
 
         alert('✓ Evento actualizado correctamente');
         showAsistenciaModule();
