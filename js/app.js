@@ -1330,6 +1330,13 @@ function processSelectedImage() {
     }
     
     console.log('📁 Procesando imagen:', file.name);
+    console.log('📊 Estado antes de procesar - isScanning:', isScanning);
+    
+    // Resetear isScanning para permitir el procesamiento
+    if (isScanning) {
+        console.log('⚠️ isScanning estaba en true, reseteando a false');
+        isScanning = false;
+    }
     
     // Mostrar mensaje de procesamiento
     showMessage('Procesando imagen...', 'info');
@@ -1344,6 +1351,7 @@ function processSelectedImage() {
         .catch(err => {
             console.error('❌ Error escaneando archivo:', err);
             showMessage('No se pudo leer el código QR de la imagen', 'error');
+            alert('❌ No se pudo leer el código QR de la imagen. Verifica que la imagen contenga un código QR válido.');
         });
     
     // Limpiar input después de procesar
