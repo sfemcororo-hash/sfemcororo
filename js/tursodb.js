@@ -2,7 +2,7 @@
 class TursoDB {
     constructor() {
         this.dbUrl = 'https://sfemcororo-sfemcororo.aws-us-east-1.turso.io';
-        this.authToken = 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJnaWQiOiJkYjIyYTE4ZC1kYTUxLTQwMTUtOTcyYS05YWUxODY3NGEyNmQiLCJpYXQiOjE3NzMwMDQ0MzQsInJpZCI6IjNlMzZmY2I1LTZiN2MtNGMxNi05MjIyLWNiYzJkMmE3NjgzNSJ9.Xp_y2qDRZBR2Dk5DxxmOiPOC3h-50JvEyrWMoUMeN3ou2A6qQfx57NjaOlJ5nBGPHu-JxAEwIUPhpnvwuZYRAw';
+        this.authToken = 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJnaWQiOiJkYjIyYTE4ZC1kYTUxLTQwMTUtOTcyYS05YWUxODY3NGEyNmQiLCJpYXQiOjE3NzMxODg1NDgsInJpZCI6IjNlMzZmY2I1LTZiN2MtNGMxNi05MjIyLWNiYzJkMmE3NjgzNSJ9.5heqiZARkmz9IvWF8GeV-5Jb9RWIJePjbgLrxYjIYMG4otOuAiW-2WeKpEUvqsXbk2oh5V6M4s_-_9sxAaIZDQ';
         
         this.auth = {
             signInWithPassword: async ({ email, password }) => {
