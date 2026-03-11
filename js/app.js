@@ -1128,40 +1128,7 @@ function startScanner() {
     // Resetear flag de primer escaneo
     isFirstScan = true;
     
-    // Agregar un pequeño delay para asegurar que todo esté inicializado
-    setTimeout(() => {
-        html5QrCode = new Html5Qrcode("reader");
-        
-        Html5Qrcode.getCameras().then(cameras => {
-            if (cameras && cameras.length > 0) {
-                // Mostrar opciones de cámara y archivo
-                showScannerOptions();
-            } else {
-                // Solo mostrar opción de archivo
-                showFileUploadOnly();
-            }
-        }).catch(err => {
-            console.log('Error accediendo a cámaras:', err);
-            // Solo mostrar opción de archivo
-            showFileUploadOnly();
-        });
-    }, 100); // 100ms delay
-}
-
-function showScannerOptions() {
-    const readerDiv = document.getElementById('reader');
-    readerDiv.innerHTML = `
-        <div style="text-align: center; margin-bottom: 20px;">
-            <button id="btn-camera" class="btn-primary" style="margin-right: 10px;">📷 Usar Cámara</button>
-            <button id="btn-file" class="btn-secondary">📁 Subir Imagen</button>
-        </div>
-        <div id="scanner-container"></div>
-        <div id="file-container" style="display: none;">
-            <input type="file" id="qr-file-input" accept="image/*" style="margin: 20px 0;">
-            <p style="color: #666; font-size: 14px;">Selecciona una imagen que contenga un código QR</p>
-        </div>
-    `;
-    
+    // Configurar eventos de los botones
     document.getElementById('btn-camera').onclick = startCameraScanner;
     document.getElementById('btn-file').onclick = showFileUpload;
     
@@ -1169,21 +1136,7 @@ function showScannerOptions() {
     startCameraScanner();
 }
 
-function showFileUploadOnly() {
-    const readerDiv = document.getElementById('reader');
-    readerDiv.innerHTML = `
-        <div style="text-align: center; margin-bottom: 20px;">
-            <button id="btn-file" class="btn-primary">📁 Subir Imagen QR</button>
-        </div>
-        <div id="file-container">
-            <input type="file" id="qr-file-input" accept="image/*" style="margin: 20px 0;">
-            <p style="color: #666; font-size: 14px;">Selecciona una imagen que contenga un código QR</p>
-        </div>
-    `;
-    
-    document.getElementById('btn-file').onclick = showFileUpload;
-    showFileUpload();
-}
+
 
 function startCameraScanner() {
     const scannerContainer = document.getElementById('scanner-container');
