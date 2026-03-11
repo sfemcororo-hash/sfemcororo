@@ -187,8 +187,11 @@
                 
                 <div id="scanner-container"></div>
                 <div id="file-container" style="display: none;">
-                    <input type="file" id="qr-file-input" accept="image/*" style="margin: 15px 0; width: 100%; max-width: 300px;">
-                    <p style="color: #666; font-size: 13px; text-align: center;">Selecciona una imagen que contenga un código QR</p>
+                    <div style="display: flex; align-items: center; gap: 10px; margin: 15px 0; justify-content: center;">
+                        <input type="file" id="qr-file-input" accept="image/*" style="flex: 1; max-width: 250px;">
+                        <button id="btn-process-image" class="btn-success" style="padding: 6px 12px; font-size: 13px;">🔍 Procesar</button>
+                    </div>
+                    <p style="color: #666; font-size: 13px; text-align: center;">Selecciona una imagen y presiona Procesar</p>
                 </div>
                 <div id="reader"></div>
                 <div id="mensaje"></div>

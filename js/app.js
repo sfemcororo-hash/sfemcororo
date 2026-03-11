@@ -1216,18 +1216,23 @@ function showFileUpload() {
         html5QrCode.stop().catch(console.error);
     }
     
-    // Configurar input de archivo
-    const fileInput = document.getElementById('qr-file-input');
-    if (fileInput) {
-        fileInput.onchange = handleFileSelect;
+    // Configurar botón de procesar imagen
+    const btnProcessImage = document.getElementById('btn-process-image');
+    if (btnProcessImage) {
+        btnProcessImage.onclick = processSelectedImage;
     }
 }
 
-function handleFileSelect(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+function processSelectedImage() {
+    const fileInput = document.getElementById('qr-file-input');
+    const file = fileInput.files[0];
     
-    console.log('📁 Archivo seleccionado:', file.name);
+    if (!file) {
+        alert('Selecciona primero una imagen');
+        return;
+    }
+    
+    console.log('📁 Procesando imagen:', file.name);
     
     // Crear un objeto Html5Qrcode temporal para escanear archivo
     const tempScanner = new Html5Qrcode("temp-reader");
@@ -1252,8 +1257,8 @@ function handleFileSelect(event) {
             showMessage('No se pudo leer el código QR de la imagen', 'error');
         });
     
-    // Limpiar input
-    event.target.value = '';
+    // Limpiar input después de procesar
+    fileInput.value = '';
 }
 
 async function onScanSuccess(qrData, decodedResult) {
