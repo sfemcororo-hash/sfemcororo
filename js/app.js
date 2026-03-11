@@ -856,6 +856,7 @@ function showEstudiantes() {
         alert('Solo administradores pueden gestionar estudiantes');
         return;
     }
+    origenGestion = 'asistencia'; // Marcar que venimos de asistencia
     hideAllSections();
     document.getElementById('estudiantes-section').classList.add('active');
     updateAllUserDropdowns();
@@ -1917,6 +1918,18 @@ function agregarEstudianteA(especialidad, anio) {
     currentEspecialidad = especialidad;
     currentAnio = anio;
     showAgregarEstudiante();
+    
+    // Actualizar botón volver según origen
+    setTimeout(() => {
+        const volverBtn = document.querySelector('#agregar-estudiante-section .header-right button');
+        if (volverBtn) {
+            if (origenGestion === 'gestion') {
+                volverBtn.onclick = () => showGestionEstudiantesCompleto();
+            } else {
+                volverBtn.onclick = () => showListaEstudiantes();
+            }
+        }
+    }, 100);
 }
 
 function showListaEstudiantes() {
@@ -3406,10 +3419,19 @@ function downloadSingleQRPersonal(elementId, filename) {
 
 let currentTipoPersonal = null;
 let origenQR = 'estudiantes'; // Guardar origen: 'estudiantes' o 'personal'
+let origenGestion = 'asistencia'; // Guardar origen: 'asistencia' o 'gestion'
 
 function agregarPersonalA(tipoPersonal) {
     currentTipoPersonal = tipoPersonal;
     showAgregarPersonal();
+    
+    // Actualizar botón volver según origen
+    setTimeout(() => {
+        const volverBtn = document.querySelector('#agregar-personal-section .header-right button');
+        if (volverBtn) {
+            volverBtn.onclick = () => showGestionPersonal();
+        }
+    }, 100);
 }
 
 function showAgregarPersonal() {
@@ -3799,6 +3821,7 @@ window.addEventListener('DOMContentLoaded', async function() {
 
 
 function showGestionEstudiantesCompleto() {
+    origenGestion = 'gestion'; // Marcar que venimos de gestión
     hideAllSections();
     document.getElementById('estudiantes-section').classList.add('active');
     updateAllUserDropdowns();
