@@ -2502,6 +2502,73 @@ function showCargaPersonal() {
     hideAllSections();
     document.getElementById('carga-personal-section').classList.add('active');
     updateAllUserDropdowns();
+    mostrarCargaNuevaPersonal();
+}
+
+function mostrarCargaNuevaPersonal() {
+    document.getElementById('seccion-carga-nueva-personal').style.display = 'block';
+    document.getElementById('seccion-actualizacion-personal').style.display = 'none';
+    document.getElementById('btn-carga-nueva-personal').className = 'btn-primary';
+    document.getElementById('btn-actualizacion-personal').className = 'btn-secondary';
+    document.getElementById('resultado-carga-personal').innerHTML = '';
+}
+
+function mostrarActualizacionPersonal() {
+    document.getElementById('seccion-carga-nueva-personal').style.display = 'none';
+    document.getElementById('seccion-actualizacion-personal').style.display = 'block';
+    document.getElementById('btn-carga-nueva-personal').className = 'btn-secondary';
+    document.getElementById('btn-actualizacion-personal').className = 'btn-primary';
+    document.getElementById('admin-password-update-personal').value = '';
+    document.getElementById('resultado-carga-personal').innerHTML = '';
+}
+
+async function actualizarBDPersonalCompleta() {
+    const password = document.getElementById('admin-password-update-personal').value;
+    const fileInput = document.getElementById('excel-file-update-personal');
+    const resultadoDiv = document.getElementById('resultado-carga-personal');
+    
+    if (!password) {
+        alert('Ingresa tu contraseña de administrador');
+        return;
+    }
+    
+    if (password !== 'Admin123!') {
+        resultadoDiv.innerHTML = '<p style="color: red;">❌ Contraseña incorrecta</p>';
+        return;
+    }
+    
+    if (!fileInput.files[0]) {
+        alert('Selecciona un archivo Excel');
+        return;
+    }
+    
+    const confirmacion = confirm('⚠️ CONFIRMACIÓN DE ACTUALIZACIÓN\n\nEsto eliminará TODO el personal actual y cargará el nuevo desde Excel.\n\n¿Continuar?');
+    
+    if (!confirmacion) {
+        resultadoDiv.innerHTML = '<p style="color: orange;">🛑 Operación cancelada</p>';
+        return;
+    }
+    
+    try {
+        resultadoDiv.innerHTML = '<p style="color: blue;">🔄 Actualizando base de datos de personal...</p>';
+        
+        // Contar personal actual
+        const countResult = await tursodb.query('SELECT COUNT(*) as total FROM administrativos');
+        const personalAnterior = countResult.rows[0]?.total || 0;
+        
+        // Eliminar datos existentes
+        await tursodb.query('DELETE FROM asistencias_personal');
+        await tursodb.query('DELETE FROM administrativos');
+        
+        resultadoDiv.innerHTML = '<p style="color: blue;">📄 Procesando archivo Excel...</p>';
+        
+        // Procesar el nuevo archivo
+        await procesarExcelPersonalInterno(fileInput.files[0], resultadoDiv, personalAnterior);
+        
+    } catch (error) {
+        console.error('Error actualizando BD personal:', error);
+        resultadoDiv.innerHTML = `<p style="color: red;">❌ Error: ${error.message}</p>`;
+    }
 }
 
 async function loadPersonalSoloQR() {
@@ -2696,7 +2763,8 @@ async function procesarExcelPersonal() {
                     personal: fila[5] ? fila[5].toString().toUpperCase().trim() : '',
                     cargo: fila[6] ? fila[6].toString().toUpperCase().trim() : '',
                     celular: fila[7] ? fila[7].toString().trim() : null,
-                    email: (fila[8] && fila[8].toString().trim()) ? fila[8].toString().toLowerCase().trim() : null
+                    email: (fila[8] && fila[8].toString().trim()) ? fila[8].toString().toLowerCase().trim() : null,
+                    password: fila[9] ? fila[9].toString().trim() : (fila[0] ? fila[0].toString().trim() : 'personal123') // Nueva columna de contraseña
                 };
                 
                 if (!personal.codigo_unico || !personal.dni || !personal.nombre || !personal.apellido_paterno || !personal.personal || !personal.cargo) {
@@ -2874,8 +2942,9 @@ async function agregarPersonal() {
     const cargo = document.getElementById('per-cargo').value;
     const celular = document.getElementById('per-celular').value;
     const email = document.getElementById('per-email').value;
+    const password = document.getElementById('per-password').value;
 
-    if (!codigo || !dni || !nombre || !apellidoPaterno || !cargo) {
+    if (!codigo || !dni || !nombre || !apellidoPaterno || !cargo || !password) {
         alert('Completa todos los campos obligatorios');
         return;
     }
@@ -2890,7 +2959,8 @@ async function agregarPersonal() {
             personal: currentTipoPersonal,
             cargo: cargo,
             celular: celular || null,
-            email: email || null
+            email: email || null,
+            password: password
         });
 
         if (error) {
@@ -2899,9 +2969,10 @@ async function agregarPersonal() {
         }
 
         // Limpiar formulario
-        ['per-codigo', 'per-dni', 'per-nombre', 'per-apellido-paterno', 'per-apellido-materno', 'per-cargo', 'per-celular', 'per-email'].forEach(id => {
+        ['per-codigo', 'per-dni', 'per-nombre', 'per-apellido-paterno', 'per-apellido-materno', 'per-cargo', 'per-celular', 'per-email', 'per-password'].forEach(id => {
             document.getElementById(id).value = '';
         });
+        document.getElementById('per-password').value = 'personal123';
 
         alert('✓ Personal agregado correctamente');
         showGestionPersonal();
@@ -2946,6 +3017,7 @@ async function editarPersonal(personalId) {
         document.getElementById('edit-per-cargo').value = personal.cargo;
         document.getElementById('edit-per-celular').value = personal.celular || '';
         document.getElementById('edit-per-email').value = personal.email || '';
+        document.getElementById('edit-per-password').value = personal.password || 'personal123';
     } catch (error) {
         alert('Error cargando personal: ' + error.message);
     }
@@ -2961,8 +3033,9 @@ async function actualizarPersonal() {
     const cargo = document.getElementById('edit-per-cargo').value;
     const celular = document.getElementById('edit-per-celular').value || null;
     const email = document.getElementById('edit-per-email').value || null;
+    const password = document.getElementById('edit-per-password').value;
 
-    if (!codigo || !dni || !nombre || !apellidoPaterno || !cargo) {
+    if (!codigo || !dni || !nombre || !apellidoPaterno || !cargo || !password) {
         alert('Completa todos los campos obligatorios');
         return;
     }
@@ -2970,9 +3043,9 @@ async function actualizarPersonal() {
     try {
         await tursodb.query(`
             UPDATE administrativos 
-            SET codigo_unico = ?, dni = ?, nombre = ?, apellido_paterno = ?, apellido_materno = ?, cargo = ?, celular = ?, email = ?
+            SET codigo_unico = ?, dni = ?, nombre = ?, apellido_paterno = ?, apellido_materno = ?, cargo = ?, celular = ?, email = ?, password = ?
             WHERE id = ?
-        `, [codigo, dni, nombre, apellidoPaterno, apellidoMaterno, cargo, celular, email, id]);
+        `, [codigo, dni, nombre, apellidoPaterno, apellidoMaterno, cargo, celular, email, password, id]);
 
         alert('✓ Personal actualizado correctamente');
         showGestionPersonal();

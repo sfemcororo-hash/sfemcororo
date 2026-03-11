@@ -657,21 +657,48 @@
             </div>
             <div class="container">
                 <div class="card">
-                    <h3>Formato del archivo Excel para Personal:</h3>
-                    <p style="color: #666; margin-bottom: 15px;">El archivo puede tener cabeceras o no. Columnas en orden:</p>
-                    <ul style="color: #666; margin-bottom: 20px; text-align: left;">
-                        <li><strong>Columna A:</strong> CÓDIGO (OBLIGATORIO - ej: ADM001)</li>
-                        <li><strong>Columna B:</strong> C.I. (DNI/CI)</li>
-                        <li><strong>Columna C:</strong> APELLIDO_PATERNO</li>
-                        <li><strong>Columna D:</strong> APELLIDO_MATERNO (opcional)</li>
-                        <li><strong>Columna E:</strong> NOMBRES</li>
-                        <li><strong>Columna F:</strong> PERSONAL (Directorio General, Asesor Legal, etc.)</li>
-                        <li><strong>Columna G:</strong> CARGO (cargo específico - OBLIGATORIO)</li>
-                        <li><strong>Columna H:</strong> CELULAR (opcional)</li>
-                        <li><strong>Columna I:</strong> EMAIL (opcional)</li>
-                    </ul>
-                    <input type="file" id="excel-file-personal" accept=".xlsx,.xls" style="margin-bottom: 15px;">
-                    <button onclick="procesarExcelPersonal()" class="btn-success">Subir y Procesar Excel</button>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button onclick="mostrarCargaNuevaPersonal()" class="btn-primary" id="btn-carga-nueva-personal">📄 Cargar Nuevos</button>
+                        <button onclick="mostrarActualizacionPersonal()" class="btn-secondary" id="btn-actualizacion-personal">🔄 Actualizar Existentes</button>
+                    </div>
+                    
+                    <!-- Carga Nueva Personal -->
+                    <div id="seccion-carga-nueva-personal">
+                        <h3>Formato del archivo Excel para Personal:</h3>
+                        <p style="color: #666; margin-bottom: 15px;">El archivo puede tener cabeceras o no. Columnas en orden:</p>
+                        <ul style="color: #666; margin-bottom: 20px; text-align: left;">
+                            <li><strong>Columna A:</strong> CÓDIGO (OBLIGATORIO - ej: ADM001)</li>
+                            <li><strong>Columna B:</strong> C.I. (DNI/CI)</li>
+                            <li><strong>Columna C:</strong> APELLIDO_PATERNO</li>
+                            <li><strong>Columna D:</strong> APELLIDO_MATERNO (opcional)</li>
+                            <li><strong>Columna E:</strong> NOMBRES</li>
+                            <li><strong>Columna F:</strong> PERSONAL (Directorio General, Asesor Legal, etc.)</li>
+                            <li><strong>Columna G:</strong> CARGO (cargo específico - OBLIGATORIO)</li>
+                            <li><strong>Columna H:</strong> CELULAR (opcional)</li>
+                            <li><strong>Columna I:</strong> EMAIL (opcional)</li>
+                            <li><strong>Columna J:</strong> Contraseña (ej: ADM001)</li>
+                        </ul>
+                        <input type="file" id="excel-file-personal" accept=".xlsx,.xls" style="margin-bottom: 15px;">
+                        <button onclick="procesarExcelPersonal()" class="btn-success">Subir y Procesar Excel</button>
+                    </div>
+                    
+                    <!-- Actualización Personal -->
+                    <div id="seccion-actualizacion-personal" style="display: none;">
+                        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                            <h4 style="color: #856404; margin-bottom: 10px;">⚠️ Actualizar Base de Datos de Personal</h4>
+                            <p style="color: #856404; margin-bottom: 10px;">Esta opción eliminará TODO el personal actual y cargará el nuevo desde Excel.</p>
+                            <p style="color: #856404; font-size: 14px;">Las asistencias de personal también se eliminarán.</p>
+                        </div>
+                        
+                        <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px;">
+                            <label style="font-weight: bold; margin-bottom: 10px; display: block;">Confirma tu contraseña de administrador:</label>
+                            <input type="password" id="admin-password-update-personal" placeholder="Contraseña de admin" style="margin-bottom: 15px;">
+                        </div>
+                        
+                        <input type="file" id="excel-file-update-personal" accept=".xlsx,.xls" style="margin-bottom: 15px;">
+                        <button onclick="actualizarBDPersonalCompleta()" class="btn-danger">🔄 Actualizar Base de Datos Personal</button>
+                    </div>
+                    
                     <div id="resultado-carga-personal" style="margin-top: 20px;"></div>
                 </div>
             </div>
@@ -714,6 +741,8 @@
                     <input type="tel" id="per-celular" placeholder="Celular (opcional)">
                     <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Email (opcional):</label>
                     <input type="email" id="per-email" placeholder="Email (opcional)">
+                    <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Contraseña:</label>
+                    <input type="password" id="per-password" placeholder="Contraseña" value="personal123">
                     <button onclick="agregarPersonal()" class="btn-primary">Agregar Personal</button>
                 </div>
             </div>
@@ -757,6 +786,8 @@
                     <input type="tel" id="edit-per-celular" placeholder="Celular (opcional)">
                     <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Email (opcional):</label>
                     <input type="email" id="edit-per-email" placeholder="Email (opcional)">
+                    <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Contraseña:</label>
+                    <input type="password" id="edit-per-password" placeholder="Contraseña">
                     <button onclick="actualizarPersonal()" class="btn-primary">Actualizar Personal</button>
                 </div>
             </div>

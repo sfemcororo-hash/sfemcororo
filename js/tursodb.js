@@ -149,6 +149,7 @@ class TursoDB {
         // Eliminar tablas obsoletas
         await this.query(`DROP TABLE IF EXISTS perfiles`);
         await this.query(`DROP TABLE IF EXISTS estudiantes_old`);
+        await this.query(`DROP TABLE IF EXISTS administrativos_old`);
         
         // Verificar si existe admin
         const adminExists = await this.query('SELECT id FROM usuarios WHERE email = ?', ['admin@escuela.com']);
@@ -228,6 +229,69 @@ class TursoDB {
                     celular TEXT,
                     email TEXT,
                     password TEXT NOT NULL DEFAULT 'estudiante123',
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+        }
+        
+        // Verificar si la tabla administrativos existe y tiene la columna password
+        const adminTableInfo = await this.query(`PRAGMA table_info(administrativos)`);
+        const hasPasswordAdmin = adminTableInfo.rows && adminTableInfo.rows.some(col => col.name === 'password');
+        
+        if (adminTableInfo.rows && adminTableInfo.rows.length > 0 && !hasPasswordAdmin) {
+            console.log('Actualizando estructura de tabla administrativos...');
+            
+            // Crear nueva tabla con estructura correcta incluyendo password
+            await this.query(`
+                CREATE TABLE IF NOT EXISTS administrativos_nueva (
+                    id TEXT PRIMARY KEY,
+                    codigo_unico TEXT UNIQUE NOT NULL,
+                    dni TEXT NOT NULL,
+                    nombre TEXT NOT NULL,
+                    apellido_paterno TEXT NOT NULL,
+                    apellido_materno TEXT,
+                    personal TEXT NOT NULL,
+                    cargo TEXT NOT NULL,
+                    celular TEXT,
+                    email TEXT,
+                    password TEXT NOT NULL DEFAULT 'personal123',
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+            
+            // Migrar datos existentes
+            const existingAdminData = await this.query(`SELECT COUNT(*) as count FROM administrativos`);
+            if (existingAdminData.rows[0]?.count > 0) {
+                await this.query(`
+                    INSERT INTO administrativos_nueva (id, codigo_unico, dni, nombre, apellido_paterno, apellido_materno, personal, cargo, celular, email, password, created_at)
+                    SELECT id, codigo_unico, dni, nombre, apellido_paterno, apellido_materno, personal, cargo, celular, email, 
+                           COALESCE(codigo_unico, 'personal123') as password,
+                           created_at
+                    FROM administrativos
+                `);
+            }
+            
+            // Renombrar tablas
+            await this.query(`DROP TABLE IF EXISTS administrativos_old`);
+            await this.query(`ALTER TABLE administrativos RENAME TO administrativos_old`);
+            await this.query(`ALTER TABLE administrativos_nueva RENAME TO administrativos`);
+            
+            console.log('Estructura de tabla administrativos actualizada correctamente con columna password');
+        } else {
+            // Crear tabla con estructura correcta si no existe
+            await this.query(`
+                CREATE TABLE IF NOT EXISTS administrativos (
+                    id TEXT PRIMARY KEY,
+                    codigo_unico TEXT UNIQUE NOT NULL,
+                    dni TEXT NOT NULL,
+                    nombre TEXT NOT NULL,
+                    apellido_paterno TEXT NOT NULL,
+                    apellido_materno TEXT,
+                    personal TEXT NOT NULL,
+                    cargo TEXT NOT NULL,
+                    celular TEXT,
+                    email TEXT,
+                    password TEXT NOT NULL DEFAULT 'personal123',
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP
                 )
             `);
