@@ -1237,14 +1237,14 @@ function initializeCameraScanner() {
 
 function showFileUpload() {
     const scannerContainer = document.getElementById('scanner-container');
-    const fileContainer = document.getElementById('file-container');
-    
-    if (scannerContainer) {
-        scannerContainer.style.display = 'none';
-    }
-    if (fileContainer) {
-        fileContainer.style.display = 'block';
-    }
+    scannerContainer.innerHTML = `
+        <div class="file-upload-container">
+            <h3>Subir imagen con código QR</h3>
+            <input type="file" id="qr-file-input" accept="image/*" style="margin: 10px 0;">
+            <div id="file-scan-result" style="margin-top: 10px;"></div>
+            <button id="register-file-attendance" style="display: none; margin-top: 10px; padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Registrar Asistencia</button>
+        </div>
+    `;
     
     // Actualizar botones
     const btnCamera = document.getElementById('btn-camera');
@@ -1263,44 +1263,39 @@ function showFileUpload() {
         html5QrCode.stop().catch(console.error);
     }
     
-    // Configurar input de archivo
-    const fileInput = document.getElementById('qr-file-input');
-    if (fileInput) {
-        fileInput.onchange = handleFileSelect;
-    }
+    document.getElementById('qr-file-input').addEventListener('change', handleFileSelect);
 }
+
+let fileScannedData = null;
 
 function handleFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    console.log('📁 Archivo seleccionado:', file.name);
+    const html5QrCode = new Html5Qrcode("file-scan-result");
     
-    // Crear un objeto Html5Qrcode temporal para escanear archivo
-    const tempScanner = new Html5Qrcode("temp-reader");
-    
-    // Crear elemento temporal oculto
-    const tempDiv = document.createElement('div');
-    tempDiv.id = 'temp-reader';
-    tempDiv.style.display = 'none';
-    document.body.appendChild(tempDiv);
-    
-    tempScanner.scanFile(file, true)
+    html5QrCode.scanFile(file, true)
         .then(decodedText => {
-            console.log('✅ QR decodificado desde archivo:', decodedText);
-            // Limpiar elemento temporal
-            document.body.removeChild(tempDiv);
-            // Procesar el resultado
-            onScanSuccess(decodedText, null);
+            console.log('QR escaneado desde archivo:', decodedText);
+            fileScannedData = decodedText;
+            
+            document.getElementById('file-scan-result').innerHTML = `
+                <div style="color: green; font-weight: bold; margin-bottom: 10px;">QR detectado: ${decodedText}</div>
+            `;
+            
+            // Mostrar botón de registrar
+            document.getElementById('register-file-attendance').style.display = 'block';
+            document.getElementById('register-file-attendance').onclick = () => {
+                onScanSuccess(fileScannedData);
+            };
         })
         .catch(err => {
-            console.error('❌ Error escaneando archivo:', err);
-            document.body.removeChild(tempDiv);
-            showMessage('No se pudo leer el código QR de la imagen', 'error');
+            console.error('Error al escanear archivo:', err);
+            document.getElementById('file-scan-result').innerHTML = `
+                <div style="color: red;">Error: No se pudo leer el código QR de la imagen</div>
+            `;
+            document.getElementById('register-file-attendance').style.display = 'none';
         });
-    
-    // Limpiar input
-    event.target.value = '';
 }
 
 async function onScanSuccess(qrData, decodedResult) {
