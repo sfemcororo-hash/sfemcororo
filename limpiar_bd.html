@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpiar Base de Datos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+        button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #c82333;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            margin-left: 10px;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗃️ Limpiar Base de Datos</h1>
+        
+        <div class="warning">
+            <h3>⚠️ ADVERTENCIA</h3>
+            <p>Esta acción eliminará TODOS los datos de la base de datos:</p>
+            <ul>
+                <li>Todos los estudiantes</li>
+                <li>Todas las asistencias</li>
+                <li>Todo el personal administrativo</li>
+                <li>Todos los eventos</li>
+                <li>Todos los usuarios (excepto admin)</li>
+            </ul>
+            <p><strong>Esta acción NO se puede deshacer.</strong></p>
+        </div>
+        
+        <p>Después de la limpieza, la tabla de estudiantes tendrá una nueva columna <code>password</code> con valor por defecto <code>"estudiante123"</code>.</p>
+        
+        <button onclick="confirmarLimpieza()">🗑️ Limpiar Base de Datos</button>
+        <button class="btn-secondary" onclick="window.location.href='index.html'">← Cancelar</button>
+        
+        <div id="resultado" style="margin-top: 20px;"></div>
+    </div>
+
+    <script src="js/tursodb.js"></script>
+    <script>
+        async function confirmarLimpieza() {
+            const confirmacion = confirm('⚠️ CONFIRMACIÓN FINAL\\n\\n¿Estás COMPLETAMENTE SEGURO de que quieres eliminar TODOS los datos?\\n\\nEsta acción NO se puede deshacer.');
+            
+            if (!confirmacion) {
+                return;
+            }
+            
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p style="color: blue;">🔄 Ejecutando limpieza...</p>';
+            
+            try {
+                console.log('🗃️ Iniciando limpieza de base de datos...');
+                
+                // 1. Eliminar todas las asistencias
+                console.log('1. Eliminando asistencias...');
+                await tursodb.query('DELETE FROM asistencias');
+                
+                // 2. Eliminar asistencias de personal (si existe la tabla)
+                try {
+                    await tursodb.query('DELETE FROM asistencias_personal');
+                } catch (e) {
+                    console.log('Tabla asistencias_personal no existe, continuando...');
+                }
+                
+                // 3. Eliminar todos los estudiantes
+                console.log('2. Eliminando estudiantes...');
+                await tursodb.query('DELETE FROM estudiantes');
+                
+                // 4. Eliminar personal administrativo
+                console.log('3. Eliminando personal administrativo...');
+                try {
+                    await tursodb.query('DELETE FROM administrativos');
+                } catch (e) {
+                    console.log('Tabla administrativos no existe, continuando...');
+                }
+                
+                // 5. Eliminar eventos
+                console.log('4. Eliminando eventos...');
+                await tursodb.query('DELETE FROM eventos');
+                
+                // 6. Eliminar usuarios (excepto admin)
+                console.log('5. Eliminando usuarios (excepto admin)...');
+                await tursodb.query('DELETE FROM usuarios WHERE email != ?', ['admin@escuela.com']);
+                
+                // 7. Recrear tabla estudiantes con password
+                console.log('6. Recreando tabla estudiantes con columna password...');
+                
+                // Eliminar tabla temporal si existe
+                await tursodb.query('DROP TABLE IF EXISTS estudiantes_nueva');
+                
+                // Crear nueva tabla con password
+                await tursodb.query(`
+                    CREATE TABLE estudiantes_nueva (
+                        id TEXT PRIMARY KEY,
+                        codigo_unico TEXT UNIQUE NOT NULL,
+                        dni TEXT NOT NULL,
+                        nombre TEXT NOT NULL,
+                        apellido_paterno TEXT NOT NULL,
+                        apellido_materno TEXT,
+                        especialidad TEXT NOT NULL,
+                        anio_formacion TEXT NOT NULL,
+                        celular TEXT,
+                        email TEXT,
+                        password TEXT NOT NULL DEFAULT 'estudiante123',
+                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                    )
+                `);
+                
+                // Eliminar tabla antigua y renombrar
+                await tursodb.query('DROP TABLE IF EXISTS estudiantes');
+                await tursodb.query('ALTER TABLE estudiantes_nueva RENAME TO estudiantes');
+                
+                console.log('✅ Base de datos limpiada exitosamente');
+                console.log('✅ Tabla estudiantes actualizada con columna password');
+                
+                resultado.innerHTML = `
+                    <div style="background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; color: #155724;">
+                        <h3>✅ Limpieza Completada</h3>
+                        <p>La base de datos ha sido limpiada exitosamente:</p>
+                        <ul>
+                            <li>Todos los datos eliminados</li>
+                            <li>Tabla estudiantes actualizada con columna password</li>
+                            <li>Solo queda el usuario admin</li>
+                        </ul>
+                        <p><strong>Puedes regresar al sistema y comenzar a cargar nuevos datos.</strong></p>
+                        <button onclick="window.location.href='index.html'" style="background: #28a745; margin-top: 10px;">← Ir al Sistema</button>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('❌ Error durante la limpieza:', error);
+                resultado.innerHTML = `
+                    <div style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; color: #721c24;">
+                        <h3>❌ Error</h3>
+                        <p>Ocurrió un error durante la limpieza:</p>
+                        <p><code>${error.message}</code></p>
+                        <p>Revisa la consola para más detalles.</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
