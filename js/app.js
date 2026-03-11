@@ -1152,8 +1152,9 @@ async function onScanSuccess(qrData) {
     event?.preventDefault?.();
 
     try {
-        // Extraer código único del QR (primer campo antes del |)
-        const codigoUnico = qrData.split('|')[0];
+        // Extraer código único del QR (último campo después del |)
+        const qrParts = qrData.split('|');
+        const codigoUnico = qrParts[qrParts.length - 1]; // Último elemento
         
         // Buscar primero en cache local
         let estudiante = findEstudianteInCache(codigoUnico);
@@ -1801,7 +1802,7 @@ async function generarQRsGrupoDirecto(especialidad, anio) {
         setTimeout(() => {
             const qrElement = document.getElementById(`qr-${index}`);
             if (qrElement && typeof qrcode !== 'undefined') {
-                const qrData = `${est.codigo_unico}|${est.especialidad}|${formatearNombreCompleto(est.nombre, est.apellido_paterno, est.apellido_materno)}`;
+                const qrData = `${formatearNombreCompleto(est.nombre, est.apellido_paterno, est.apellido_materno)}|${est.especialidad}|${est.codigo_unico}`;
                 const qr = qrcode(0, 'M'); // Tipo 0 (automático), corrección media
                 qr.addData(qrData);
                 qr.make();
@@ -3005,7 +3006,7 @@ async function generarQRsPersonalDirecto(tipoPersonal) {
         setTimeout(() => {
             const qrElement = document.getElementById(`qr-${index}`);
             if (qrElement && typeof qrcode !== 'undefined') {
-                const qrData = `${person.codigo_unico}|${person.cargo}|${nombreCompleto}`;
+                const qrData = `${nombreCompleto}|${person.cargo}|${person.codigo_unico}`;
                 const qr = qrcode(0, 'M');
                 qr.addData(qrData);
                 qr.make();
