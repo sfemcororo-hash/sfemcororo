@@ -1,7 +1,8 @@
 // ========== TOMAR ASISTENCIA - LÓGICA ==========
 
 let currentUser = null;
-let estadosEstudiantes = {}; // { estudiante_id: 'PRESENTE'|'AUSENTE' }
+let estadosEstudiantes = {};
+let cambiosPendientes = {}; // { registroId: nuevoEstado }
 
 window.addEventListener('DOMContentLoaded', async function () {
     const user = JSON.parse(localStorage.getItem('currentUser'));
@@ -275,6 +276,7 @@ function mostrarRegistrosHoy(registros, fecha) {
 
 // ========== PASO 3: ACTUALIZAR ==========
 async function cargarActualizacion(especialidad, anio, fecha) {
+    cambiosPendientes = {}; // Limpiar cambios al cargar
     const result = await tursodb.query(`
         SELECT ae.*, e.nombre, e.apellido_paterno, e.apellido_materno, e.codigo_unico
         FROM asistencia_estudiantes ae
@@ -322,11 +324,11 @@ function renderActualizacion(registros) {
                     <small>${reg.codigo_unico}</small>
                 </div>
                 <div class="estados-update">
-                    <button onclick="actualizarEstado('${reg.id}', 'AUSENTE')" 
+                    <button onclick="marcarCambio('${reg.id}', 'AUSENTE', this)" 
                         class="btn-estado ${reg.estado === 'AUSENTE' ? 'activo ausente-btn' : ''}">A Ausente</button>
-                    <button onclick="actualizarEstado('${reg.id}', 'RETRASO')" 
+                    <button onclick="marcarCambio('${reg.id}', 'RETRASO', this)" 
                         class="btn-estado ${reg.estado === 'RETRASO' ? 'activo retraso-btn' : ''}">R Retraso</button>
-                    <button onclick="actualizarEstado('${reg.id}', 'LICENCIA')" 
+                    <button onclick="marcarCambio('${reg.id}', 'LICENCIA', this)" 
                         class="btn-estado ${reg.estado === 'LICENCIA' ? 'activo licencia-btn' : ''}">L Licencia</button>
                 </div>
             `;
@@ -335,21 +337,47 @@ function renderActualizacion(registros) {
     });
 }
 
-async function actualizarEstado(registroId, nuevoEstado) {
+// Marcar cambio en memoria (sin guardar en BD)
+function marcarCambio(registroId, nuevoEstado, btn) {
+    cambiosPendientes[registroId] = nuevoEstado;
+
+    // Actualizar visual: desactivar todos los botones del grupo y activar el seleccionado
+    const grupo = btn.parentElement;
+    grupo.querySelectorAll('.btn-estado').forEach(b => {
+        b.classList.remove('activo', 'ausente-btn', 'retraso-btn', 'licencia-btn');
+    });
+    btn.classList.add('activo');
+    if (nuevoEstado === 'AUSENTE')  btn.classList.add('ausente-btn');
+    if (nuevoEstado === 'RETRASO')  btn.classList.add('retraso-btn');
+    if (nuevoEstado === 'LICENCIA') btn.classList.add('licencia-btn');
+
+    // Indicar que hay cambios pendientes
+    const total = Object.keys(cambiosPendientes).length;
+    document.querySelector('#paso-actualizar .botones-accion .btn-primary').textContent =
+        `💾 Guardar (${total} cambio${total !== 1 ? 's' : ''})`;
+}
+
+// Guardar todos los cambios pendientes en BD
+async function guardarCambios() {
+    if (Object.keys(cambiosPendientes).length === 0) {
+        volverSeleccion();
+        return;
+    }
     const ahora = new Date();
     const hora = ahora.toLocaleTimeString('es-BO', {hour:'2-digit', minute:'2-digit', hour12:false});
     const fechaAct = ahora.toISOString().split('T')[0];
-    await tursodb.query(`
-        UPDATE asistencia_estudiantes 
-        SET estado = ?, hora_actualizacion = ?, fecha_actualizacion = ?
-        WHERE id = ?
-    `, [nuevoEstado, hora, fechaAct, registroId]);
 
-    // Recargar la vista
-    const especialidad = document.getElementById('act-titulo').textContent.split(' - ')[0];
-    const anio = document.getElementById('act-titulo').textContent.split(' - ')[1];
-    const fecha = new Date().toISOString().split('T')[0];
-    await cargarActualizacion(especialidad, anio, fecha);
+    for (const [registroId, nuevoEstado] of Object.entries(cambiosPendientes)) {
+        await tursodb.query(`
+            UPDATE asistencia_estudiantes
+            SET estado = ?, hora_actualizacion = ?, fecha_actualizacion = ?
+            WHERE id = ?
+        `, [nuevoEstado, hora, fechaAct, registroId]);
+    }
+
+    cambiosPendientes = {};
+    alert('Cambios guardados correctamente');
+    volverSeleccion();
 }
 
 function actualizarContadoresAct(registros) {
@@ -367,6 +395,7 @@ function cancelarLista() {
 }
 
 function volverSeleccion() {
+    cambiosPendientes = {};
     document.getElementById('paso-actualizar').style.display = 'none';
     document.getElementById('paso-seleccion').style.display = 'block';
     document.querySelectorAll('.registros-hoy').forEach(el => el.style.display = 'block');
