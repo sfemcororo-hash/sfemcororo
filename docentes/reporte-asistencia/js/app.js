@@ -220,20 +220,19 @@ async function generarReporte() {
         const apellidoM = est.apellido_materno !== 'SIN DATO' ? est.apellido_materno : '';
         const nombre = `${est.apellido_paterno} ${apellidoM} ${est.nombre}`.trim();
         let asistencias = 0;
-        let retrasos = 0;
         let celdas = '';
 
         clases.forEach(c => {
             const key = `${c.fecha}_${c.hora_registro}`;
             const estado = mapaAsist[est.id]?.[key] || null;
             if (estado === 'PRESENTE') {
-                asistencias++;
+                asistencias += 1;
                 celdas += `<td class="est-presente">P</td>`;
             } else if (estado === 'RETRASO') {
-                retrasos++;
+                asistencias += 0.6;
                 celdas += `<td class="est-retraso">R</td>`;
             } else if (estado === 'LICENCIA') {
-                asistencias++;
+                asistencias += 1;
                 celdas += `<td class="est-licencia">L</td>`;
             } else if (estado === 'AUSENTE') {
                 celdas += `<td class="est-ausente">A</td>`;
@@ -241,10 +240,6 @@ async function generarReporte() {
                 celdas += `<td class="est-sin">-</td>`;
             }
         });
-
-        // 3 retrasos = 1 falta
-        const retrasosCuentan = retrasos - (Math.floor(retrasos / 3) * 3);
-        asistencias += retrasosCuentan;
 
         const porcentaje = clases.length > 0 ? Math.round((asistencias / clases.length) * 100) : 0;
         const pctClass = porcentaje >= 80 ? 'pct-bueno' : porcentaje >= 60 ? 'pct-regular' : 'pct-malo';
