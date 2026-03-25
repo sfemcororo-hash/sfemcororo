@@ -199,7 +199,7 @@ async function generarReporte() {
                 <td class="td-nro">${idx + 1}</td>
                 <td class="td-nombre">${nombre}</td>
                 ${celdas}
-                <td class="td-total">${asistencias}/${clases.length}</td>
+                <td class="td-total">${asistencias}</td>
                 <td class="td-pct ${pctClass}">${porcentaje}%</td>
             </tr>
         `;
