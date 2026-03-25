@@ -1,0 +1,224 @@
+/* ========== BIBLIOTECA - ESTILOS ========== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.header {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.header h1 {
+    color: white;
+    font-size: 1.3rem;
+}
+
+.title-line1 {
+    display: block;
+    font-size: 1rem;
+    opacity: 0.85;
+}
+
+.title-line2 {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: bold;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+/* Botones */
+.btn-primary {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover { background: #0056b3; }
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.btn-secondary:hover { background: rgba(255, 255, 255, 0.3); }
+
+.btn-success {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.btn-success:hover { background: #1e7e34; }
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.btn-danger:hover { background: #bd2130; }
+
+/* Coming soon */
+.coming-soon {
+    text-align: center;
+    padding: 80px 20px;
+    color: white;
+}
+
+.coming-soon-icon {
+    font-size: 5rem;
+    margin-bottom: 20px;
+}
+
+.coming-soon h2 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.coming-soon p {
+    font-size: 1.1rem;
+    opacity: 0.7;
+}
+
+/* Card */
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+/* User dropdown */
+.user-dropdown {
+    position: relative;
+}
+
+.user-dropdown-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: white;
+    transition: all 0.3s;
+    backdrop-filter: blur(5px);
+}
+
+.user-dropdown-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+}
+
+.user-dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 5px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    min-width: 220px;
+    z-index: 1000;
+    padding-bottom: 10px;
+}
+
+.user-dropdown.active .user-dropdown-content {
+    display: block;
+}
+
+.user-dropdown-content p {
+    margin: 0;
+    padding: 10px 15px;
+    color: #333;
+    font-size: 13px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.user-dropdown-content p:last-of-type {
+    border-bottom: none;
+}
+
+.user-dropdown-content strong {
+    color: #007bff;
+    display: block;
+    margin-bottom: 3px;
+}
+
+.user-dropdown-content button {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.user-dropdown-content button:hover {
+    background: #c82333;
+    transform: translateY(-2px);
+}
+
+
+@media (max-width: 600px) {
+    .header h1 { font-size: 1rem; }
+    .title-line2 { font-size: 1.1rem; }
+    .container { padding: 15px; }
+}
