@@ -42,14 +42,14 @@ async function cargarEspecialidades() {
 async function cargarAnios() {
     const especialidad = document.getElementById('sel-especialidad').value;
     const grupoAnio = document.getElementById('grupo-anio');
+    const grupoMateria = document.getElementById('grupo-materia');
     const btnGenerar = document.getElementById('btn-generar');
-    const selAnio = document.getElementById('sel-anio');
 
-    if (!especialidad) {
-        grupoAnio.style.display = 'none';
-        btnGenerar.style.display = 'none';
-        return;
-    }
+    grupoMateria.style.display = 'none';
+    btnGenerar.style.display = 'none';
+    document.getElementById('reporte-container').style.display = 'none';
+
+    if (!especialidad) { grupoAnio.style.display = 'none'; return; }
 
     const result = await tursodb.query(
         `SELECT DISTINCT anio_formacion FROM estudiantes WHERE especialidad = ? ORDER BY anio_formacion`,
@@ -58,25 +58,51 @@ async function cargarAnios() {
     const orden = ['PRIMERO','SEGUNDO','TERCERO','CUARTO','QUINTO'];
     const anios = (result.rows || []).sort((a,b) => orden.indexOf(a.anio_formacion) - orden.indexOf(b.anio_formacion));
 
-    selAnio.innerHTML = '<option value="">-- Selecciona --</option>';
-    anios.forEach(r => {
-        selAnio.innerHTML += `<option value="${r.anio_formacion}">${r.anio_formacion}</option>`;
+    const sel = document.getElementById('sel-anio');
+    sel.innerHTML = '<option value="">-- Selecciona --</option>';
+    anios.forEach(r => sel.innerHTML += `<option value="${r.anio_formacion}">${r.anio_formacion}</option>`);
+    grupoAnio.style.display = 'block';
+}
+
+async function cargarMaterias() {
+    const especialidad = document.getElementById('sel-especialidad').value;
+    const anio = document.getElementById('sel-anio').value;
+    const grupoMateria = document.getElementById('grupo-materia');
+    const btnGenerar = document.getElementById('btn-generar');
+
+    btnGenerar.style.display = 'none';
+    document.getElementById('reporte-container').style.display = 'none';
+
+    if (!anio) { grupoMateria.style.display = 'none'; return; }
+
+    const result = await tursodb.query(
+        `SELECT nombre FROM materias WHERE especialidad = ? AND anio_formacion = ? ORDER BY nombre`,
+        [especialidad, anio]
+    );
+
+    const sel = document.getElementById('sel-materia');
+    sel.innerHTML = '<option value="">-- Selecciona materia --</option><option value="TODAS">📋 Todas las materias</option>';
+    (result.rows || []).forEach(m => {
+        sel.innerHTML += `<option value="${m.nombre}">${m.nombre}</option>`;
     });
 
-    grupoAnio.style.display = 'block';
-    selAnio.onchange = () => {
-        btnGenerar.style.display = selAnio.value ? 'block' : 'none';
-        document.getElementById('reporte-container').style.display = 'none';
-    };
+    grupoMateria.style.display = 'block';
+}
+
+function mostrarBotonGenerar() {
+    const materia = document.getElementById('sel-materia').value;
+    document.getElementById('btn-generar').style.display = materia ? 'block' : 'none';
+    document.getElementById('reporte-container').style.display = 'none';
 }
 
 // ========== GENERAR REPORTE ==========
 async function generarReporte() {
     const especialidad = document.getElementById('sel-especialidad').value;
     const anio = document.getElementById('sel-anio').value;
-    if (!especialidad || !anio) return;
+    const materia = document.getElementById('sel-materia').value;
+    if (!especialidad || !anio || !materia) return;
 
-    // 1. Obtener todos los estudiantes del grupo
+    // 1. Estudiantes del grupo
     const estResult = await tursodb.query(
         `SELECT id, nombre, apellido_paterno, apellido_materno, codigo_unico
          FROM estudiantes WHERE especialidad = ? AND anio_formacion = ?
@@ -87,30 +113,41 @@ async function generarReporte() {
         alert('No hay estudiantes en este grupo'); return;
     }
 
-    // 2. Obtener todas las fechas únicas con registros (cada fecha+hora = una clase)
-    const clasesResult = await tursodb.query(
-        `SELECT DISTINCT fecha, hora_registro
-         FROM asistencia_estudiantes
-         WHERE especialidad = ? AND anio_formacion = ?
-         ORDER BY fecha ASC, hora_registro ASC`,
-        [especialidad, anio]
-    );
+    // 2. Clases registradas (filtradas por materia si aplica)
+    let clasesQuery, clasesParams;
+    if (materia === 'TODAS') {
+        clasesQuery = `SELECT DISTINCT fecha, hora_registro, materia
+                       FROM asistencia_estudiantes
+                       WHERE especialidad = ? AND anio_formacion = ?
+                       ORDER BY fecha ASC, hora_registro ASC`;
+        clasesParams = [especialidad, anio];
+    } else {
+        clasesQuery = `SELECT DISTINCT fecha, hora_registro, materia
+                       FROM asistencia_estudiantes
+                       WHERE especialidad = ? AND anio_formacion = ? AND materia = ?
+                       ORDER BY fecha ASC, hora_registro ASC`;
+        clasesParams = [especialidad, anio, materia];
+    }
+    const clasesResult = await tursodb.query(clasesQuery, clasesParams);
     const clases = clasesResult.rows || [];
 
     if (clases.length === 0) {
-        alert('No hay registros de asistencia para este grupo'); return;
+        alert('No hay registros de asistencia para este grupo' + (materia !== 'TODAS' ? ` en ${materia}` : '')); return;
     }
 
-    // 3. Obtener todos los registros de asistencia del grupo
-    const asistResult = await tursodb.query(
-        `SELECT estudiante_id, fecha, hora_registro, estado
-         FROM asistencia_estudiantes
-         WHERE especialidad = ? AND anio_formacion = ?`,
-        [especialidad, anio]
-    );
+    // 3. Registros de asistencia
+    let asistQuery, asistParams;
+    if (materia === 'TODAS') {
+        asistQuery = `SELECT estudiante_id, fecha, hora_registro, materia, estado FROM asistencia_estudiantes WHERE especialidad = ? AND anio_formacion = ?`;
+        asistParams = [especialidad, anio];
+    } else {
+        asistQuery = `SELECT estudiante_id, fecha, hora_registro, materia, estado FROM asistencia_estudiantes WHERE especialidad = ? AND anio_formacion = ? AND materia = ?`;
+        asistParams = [especialidad, anio, materia];
+    }
+    const asistResult = await tursodb.query(asistQuery, asistParams);
     const registros = asistResult.rows || [];
 
-    // Crear mapa: { estudiante_id: { 'fecha_hora': estado } }
+    // Mapa: { estudiante_id: { 'fecha_hora_materia': estado } }
     const mapaAsist = {};
     registros.forEach(r => {
         if (!mapaAsist[r.estudiante_id]) mapaAsist[r.estudiante_id] = {};
@@ -126,16 +163,17 @@ async function generarReporte() {
         meses[key].push(c);
     });
 
-    // 5. Llenar encabezado del reporte
+    // 5. Encabezado del reporte
     const ahora = new Date();
     const fechaReporte = ahora.toLocaleDateString('es-BO', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
     document.getElementById('rep-especialidad').textContent = especialidad;
     document.getElementById('rep-anio').textContent = anio;
+    document.getElementById('rep-materia').textContent = materia === 'TODAS' ? 'Todas las materias' : materia;
     document.getElementById('rep-usuario').textContent = currentUser.nombre;
     document.getElementById('rep-fecha').textContent = fechaReporte;
     document.getElementById('rep-total-clases').textContent = clases.length;
 
-    // 6. Construir cabecera de tabla
+    // 6. Cabecera de tabla
     const thead = document.getElementById('tabla-head');
     const tbody = document.getElementById('tabla-body');
     thead.innerHTML = '';
@@ -147,15 +185,15 @@ async function generarReporte() {
         '09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'
     };
 
-    // Fila 1: meses (colspan por cantidad de clases en ese mes)
-    let fila1 = `<tr><th rowspan="2" class="th-nro">Nro</th><th rowspan="2" class="th-nombre">Nombre Completo</th>`;
+    // Fila 1: meses
+    let fila1 = `<tr><th rowspan="3" class="th-nro">Nro</th><th rowspan="3" class="th-nombre">Nombre Completo</th>`;
     Object.keys(meses).forEach(mesKey => {
         const [, mes] = mesKey.split('-');
         fila1 += `<th colspan="${meses[mesKey].length}" class="th-mes">${mesesNombres[mes]}</th>`;
     });
-    fila1 += `<th rowspan="2" class="th-total">Total<br>Asist.</th><th rowspan="2" class="th-pct">%</th></tr>`;
+    fila1 += `<th rowspan="3" class="th-total">Total</th><th rowspan="3" class="th-pct">%</th></tr>`;
 
-    // Fila 2: fechas (día/mes)
+    // Fila 2: fechas
     let fila2 = `<tr>`;
     clases.forEach(c => {
         const [, mes, dia] = c.fecha.split('-');
@@ -163,9 +201,21 @@ async function generarReporte() {
     });
     fila2 += `</tr>`;
 
-    thead.innerHTML = fila1 + fila2;
+    // Fila 3: materia (solo si es TODAS)
+    let fila3 = '';
+    if (materia === 'TODAS') {
+        fila3 = `<tr>`;
+        clases.forEach(c => {
+            const mat = c.materia || '-';
+            const abrev = mat.length > 6 ? mat.substring(0,6) + '.' : mat;
+            fila3 += `<th class="th-materia" title="${mat}">${abrev}</th>`;
+        });
+        fila3 += `</tr>`;
+    }
 
-    // 7. Construir filas de estudiantes
+    thead.innerHTML = fila1 + fila2 + fila3;
+
+    // 7. Filas de estudiantes
     estResult.rows.forEach((est, idx) => {
         const apellidoM = est.apellido_materno !== 'SIN DATO' ? est.apellido_materno : '';
         const nombre = `${est.apellido_paterno} ${apellidoM} ${est.nombre}`.trim();
@@ -192,10 +242,9 @@ async function generarReporte() {
             }
         });
 
-        // Cada 3 retrasos = 1 falta (los retrasos restantes cuentan como asistencia)
-        const faltasPorRetraso = Math.floor(retrasos / 3);
-        const retrasosCuentanAsist = retrasos - (faltasPorRetraso * 3);
-        asistencias += retrasosCuentanAsist;
+        // 3 retrasos = 1 falta
+        const retrasosCuentan = retrasos - (Math.floor(retrasos / 3) * 3);
+        asistencias += retrasosCuentan;
 
         const porcentaje = clases.length > 0 ? Math.round((asistencias / clases.length) * 100) : 0;
         const pctClass = porcentaje >= 80 ? 'pct-bueno' : porcentaje >= 60 ? 'pct-regular' : 'pct-malo';

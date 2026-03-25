@@ -30,7 +30,7 @@
             <!-- Selección -->
             <div class="card">
                 <h2>📊 Reporte de Asistencia</h2>
-                <p class="subtitle">Selecciona el grupo para generar el reporte</p>
+                <p class="subtitle">Selecciona el grupo y materia para generar el reporte</p>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Especialidad</label>
@@ -40,10 +40,17 @@
                     </div>
                     <div class="form-group" id="grupo-anio" style="display:none;">
                         <label>Año de Formación</label>
-                        <select id="sel-anio">
+                        <select id="sel-anio" onchange="cargarMaterias()">
                             <option value="">-- Selecciona --</option>
                         </select>
                     </div>
+                </div>
+                <div class="form-group" id="grupo-materia" style="display:none;">
+                    <label>Materia</label>
+                    <select id="sel-materia" onchange="mostrarBotonGenerar()">
+                        <option value="">-- Selecciona materia --</option>
+                        <option value="TODAS">📋 Todas las materias</option>
+                    </select>
                 </div>
                 <button onclick="generarReporte()" class="btn-primary btn-full" id="btn-generar" style="display:none;">
                     📊 Generar Reporte
@@ -52,7 +59,6 @@
 
             <!-- Reporte -->
             <div id="reporte-container" style="display:none;">
-                <!-- Encabezado del reporte -->
                 <div class="reporte-header">
                     <div class="reporte-titulo">
                         <h2>ESFM "Simón Bolívar" - CORORO</h2>
@@ -61,13 +67,13 @@
                     <div class="reporte-meta">
                         <p><strong>Especialidad:</strong> <span id="rep-especialidad"></span></p>
                         <p><strong>Año de Formación:</strong> <span id="rep-anio"></span></p>
+                        <p><strong>Materia:</strong> <span id="rep-materia"></span></p>
                         <p><strong>Generado por:</strong> <span id="rep-usuario"></span></p>
                         <p><strong>Fecha de reporte:</strong> <span id="rep-fecha"></span></p>
                         <p><strong>Total de clases registradas:</strong> <span id="rep-total-clases"></span></p>
                     </div>
                 </div>
 
-                <!-- Tabla -->
                 <div class="tabla-wrapper">
                     <table id="tabla-reporte">
                         <thead id="tabla-head"></thead>

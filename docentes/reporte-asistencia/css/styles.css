@@ -515,3 +515,13 @@ th, td {
     th, td { padding: 4px 5px; }
     #reporte-container { display: block !important; }
 }
+
+.th-materia {
+    background: #6f42c1;
+    color: white;
+    font-size: 10px;
+    max-width: 40px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
