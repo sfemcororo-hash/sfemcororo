@@ -333,6 +333,7 @@ class TursoDB {
                 fecha TEXT NOT NULL,
                 hora_registro TEXT NOT NULL,
                 hora_actualizacion TEXT,
+                fecha_actualizacion TEXT,
                 motivo TEXT,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
             )

@@ -183,6 +183,14 @@ async function guardarAsistencia() {
             `, [id, estudianteId, currentUser.id, especialidad, anio, estado, fecha, hora]);
         }
         alert(`✅ Asistencia guardada correctamente\n${presentes} presentes | ${total - presentes} ausentes`);
+        // Volver al paso de selección limpio
+        document.getElementById('paso-lista').style.display = 'none';
+        document.getElementById('paso-seleccion').style.display = 'block';
+        document.getElementById('sel-especialidad').value = '';
+        document.getElementById('sel-anio').value = '';
+        document.getElementById('grupo-anio').style.display = 'none';
+        document.getElementById('btn-cargar').style.display = 'none';
+        document.querySelectorAll('.registros-hoy').forEach(el => el.remove());
         await verificarRegistroHoy();
     } catch (error) {
         alert('❌ Error guardando: ' + error.message);
@@ -284,14 +292,14 @@ function renderActualizacion(registros) {
 async function actualizarEstado(registroId, nuevoEstado) {
     const ahora = new Date();
     const hora = ahora.toLocaleTimeString('es-BO', {hour:'2-digit', minute:'2-digit', hour12:false});
+    const fechaAct = ahora.toISOString().split('T')[0];
     await tursodb.query(`
         UPDATE asistencia_estudiantes 
-        SET estado = ?, hora_actualizacion = ?
+        SET estado = ?, hora_actualizacion = ?, fecha_actualizacion = ?
         WHERE id = ?
-    `, [nuevoEstado, hora, registroId]);
+    `, [nuevoEstado, hora, fechaAct, registroId]);
 
     // Recargar la vista
-    const row = document.getElementById(`act-row-${registroId}`);
     const especialidad = document.getElementById('act-titulo').textContent.split(' - ')[0];
     const anio = document.getElementById('act-titulo').textContent.split(' - ')[1];
     const fecha = new Date().toISOString().split('T')[0];
