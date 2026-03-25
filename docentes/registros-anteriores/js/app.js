@@ -40,7 +40,6 @@ async function buscarRegistros() {
 
     document.getElementById('registros-dia').style.display = 'none';
     document.getElementById('sin-resultados').style.display = 'none';
-    document.getElementById('detalle-registro').style.display = 'none';
 
     // Traer todos los registros agrupados por especialidad+anio+hora (cada llamada de lista es única)
     const result = await tursodb.query(`
