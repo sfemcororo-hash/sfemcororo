@@ -177,7 +177,7 @@ async function guardarAsistencia() {
     const existe = await tursodb.query(`
         SELECT COUNT(*) as total FROM asistencia_estudiantes
         WHERE docente_id = ? AND especialidad = ? AND anio_formacion = ? AND fecha = ?
-    `, [currentUser.id, especialidad, anio, fecha]);
+    `, [String(currentUser.id), especialidad, anio, fecha]);
 
     if (existe.rows && parseInt(existe.rows[0].total) > 0) {
         const confirmar = confirm(`⚠️ Ya existe un registro de asistencia para este grupo hoy.\n\n¿Deseas guardar un nuevo registro de todas formas?`);
@@ -194,7 +194,7 @@ async function guardarAsistencia() {
                 INSERT INTO asistencia_estudiantes 
                 (id, estudiante_id, docente_id, especialidad, anio_formacion, estado, fecha, hora_registro)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            `, [id, estudianteId, currentUser.id, especialidad, anio, estado, fecha, hora]);
+            `, [id, estudianteId, String(currentUser.id), especialidad, anio, estado, fecha, hora]);
         }
         alert(`✅ Asistencia guardada correctamente\n${presentes} presentes | ${total - presentes} ausentes`);
         // Volver al paso de selección limpio
@@ -217,9 +217,9 @@ async function verificarRegistroHoy() {
     const result = await tursodb.query(`
         SELECT DISTINCT especialidad, anio_formacion, hora_registro
         FROM asistencia_estudiantes
-        WHERE CAST(docente_id AS TEXT) = CAST(? AS TEXT) AND fecha = ?
+        WHERE docente_id = ? AND fecha = ?
         ORDER BY hora_registro DESC
-    `, [currentUser.id, fecha]);
+    `, [String(currentUser.id), fecha]);
 
     if (result.rows && result.rows.length > 0) {
         // Hay registros hoy - mostrar opción de actualizar
@@ -247,9 +247,9 @@ async function cargarActualizacion(especialidad, anio, fecha) {
         SELECT ae.*, e.nombre, e.apellido_paterno, e.apellido_materno, e.codigo_unico
         FROM asistencia_estudiantes ae
         JOIN estudiantes e ON ae.estudiante_id = e.id
-        WHERE ae.especialidad = ? AND ae.anio_formacion = ? AND ae.fecha = ? AND CAST(ae.docente_id AS TEXT) = CAST(? AS TEXT)
+        WHERE ae.especialidad = ? AND ae.anio_formacion = ? AND ae.fecha = ? AND ae.docente_id = ?
         ORDER BY e.apellido_paterno, e.nombre
-    `, [especialidad, anio, fecha, currentUser.id]);
+    `, [especialidad, anio, fecha, String(currentUser.id)]);
 
     if (!result.rows || result.rows.length === 0) return;
 

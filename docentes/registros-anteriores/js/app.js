@@ -50,10 +50,10 @@ async function buscarRegistros() {
             SUM(CASE WHEN estado = 'LICENCIA' THEN 1 ELSE 0 END) as licencias,
             COUNT(*) as total
         FROM asistencia_estudiantes
-        WHERE CAST(docente_id AS TEXT) = CAST(? AS TEXT) AND fecha = ?
+        WHERE docente_id = ? AND fecha = ?
         GROUP BY especialidad, anio_formacion, hora_registro
         ORDER BY hora_registro DESC
-    `, [currentUser.id, fecha]);
+    `, [String(currentUser.id), fecha]);
 
     if (!result.rows || result.rows.length === 0) {
         document.getElementById('sin-resultados').style.display = 'block';
@@ -111,9 +111,9 @@ async function toggleDetalle(btn, especialidad, anio, hora, fecha) {
         SELECT ae.*, e.nombre, e.apellido_paterno, e.apellido_materno, e.codigo_unico
         FROM asistencia_estudiantes ae
         JOIN estudiantes e ON ae.estudiante_id = e.id
-        WHERE ae.especialidad = ? AND ae.anio_formacion = ? AND ae.hora_registro = ? AND ae.fecha = ? AND CAST(ae.docente_id AS TEXT) = CAST(? AS TEXT)
+        WHERE ae.especialidad = ? AND ae.anio_formacion = ? AND ae.hora_registro = ? AND ae.fecha = ? AND ae.docente_id = ?
         ORDER BY e.apellido_paterno, e.nombre
-    `, [especialidad, anio, hora, fecha, currentUser.id]);
+    `, [especialidad, anio, hora, fecha, String(currentUser.id)]);
 
     if (!result.rows || result.rows.length === 0) {
         container.innerHTML = '<p style="padding:10px; color:#666;">Sin datos</p>';
@@ -183,9 +183,9 @@ async function actualizarEstado(registroId, nuevoEstado, especialidad, anio, hor
         SELECT ae.*, e.nombre, e.apellido_paterno, e.apellido_materno, e.codigo_unico
         FROM asistencia_estudiantes ae
         JOIN estudiantes e ON ae.estudiante_id = e.id
-        WHERE ae.especialidad = ? AND ae.anio_formacion = ? AND ae.hora_registro = ? AND ae.fecha = ? AND CAST(ae.docente_id AS TEXT) = CAST(? AS TEXT)
+        WHERE ae.especialidad = ? AND ae.anio_formacion = ? AND ae.hora_registro = ? AND ae.fecha = ? AND ae.docente_id = ?
         ORDER BY e.apellido_paterno, e.nombre
-    `, [especialidad, anio, hora, fecha, currentUser.id]);
+    `, [especialidad, anio, hora, fecha, String(currentUser.id)]);
 
     renderListaInline(container, result.rows, especialidad, anio, hora, fecha);
     actualizarContadoresCard(result.rows, especialidad, anio, hora);
