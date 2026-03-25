@@ -120,7 +120,7 @@ function renderLista(estudiantes) {
                 <strong>${est.apellido_paterno} ${est.apellido_materno !== 'SIN DATO' ? est.apellido_materno : ''} ${est.nombre}</strong>
                 <small>${est.codigo_unico}</small>
             </div>
-            <span class="estado-badge" id="badge-${est.id}">✅ PRESENTE</span>
+            <span class="estado-badge presente" id="badge-${est.id}">P Presente</span>
         `;
         container.appendChild(div);
     });
@@ -137,11 +137,11 @@ function actualizarBadge(estudianteId) {
     const row = document.getElementById(`row-${estudianteId}`);
     const estado = estadosEstudiantes[estudianteId];
     if (estado === 'PRESENTE') {
-        badge.textContent = '✅ PRESENTE';
+        badge.textContent = 'P Presente';
         badge.className = 'estado-badge presente';
         row.className = 'estudiante-row';
     } else {
-        badge.textContent = '❌ AUSENTE';
+        badge.textContent = 'A Ausente';
         badge.className = 'estado-badge ausente';
         row.className = 'estudiante-row ausente';
     }
@@ -281,7 +281,7 @@ function renderActualizacion(registros) {
                     <strong>${nombre}</strong>
                     <small>${reg.codigo_unico}</small>
                 </div>
-                <span class="estado-badge presente">✅ PRESENTE</span>
+                <span class="estado-badge presente">P Presente</span>
             `;
         } else {
             div.innerHTML = `
@@ -291,11 +291,11 @@ function renderActualizacion(registros) {
                 </div>
                 <div class="estados-update">
                     <button onclick="actualizarEstado('${reg.id}', 'AUSENTE')" 
-                        class="btn-estado ${reg.estado === 'AUSENTE' ? 'activo ausente-btn' : ''}">❌ Ausente</button>
+                        class="btn-estado ${reg.estado === 'AUSENTE' ? 'activo ausente-btn' : ''}">A Ausente</button>
                     <button onclick="actualizarEstado('${reg.id}', 'RETRASO')" 
-                        class="btn-estado ${reg.estado === 'RETRASO' ? 'activo retraso-btn' : ''}">⏰ Retraso</button>
+                        class="btn-estado ${reg.estado === 'RETRASO' ? 'activo retraso-btn' : ''}">R Retraso</button>
                     <button onclick="actualizarEstado('${reg.id}', 'LICENCIA')" 
-                        class="btn-estado ${reg.estado === 'LICENCIA' ? 'activo licencia-btn' : ''}">📋 Licencia</button>
+                        class="btn-estado ${reg.estado === 'LICENCIA' ? 'activo licencia-btn' : ''}">L Licencia</button>
                 </div>
             `;
         }

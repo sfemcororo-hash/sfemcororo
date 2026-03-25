@@ -75,11 +75,11 @@ async function buscarRegistros() {
                     <strong>🎓 ${r.especialidad} - Año ${r.anio_formacion}</strong>
                     <small>🕒 Registrado a las ${r.hora_registro}</small>
                     <div class="mini-contadores">
-                        <span class="mini-cnt presente">✅ ${r.presentes}</span>
-                        <span class="mini-cnt retraso">⏰ ${r.retrasos}</span>
-                        <span class="mini-cnt licencia">📋 ${r.licencias}</span>
-                        <span class="mini-cnt ausente">❌ ${r.ausentes}</span>
-                        <span class="mini-cnt total">👥 ${r.total}</span>
+                        <span class="mini-cnt presente">P ${r.presentes}</span>
+                        <span class="mini-cnt retraso">R ${r.retrasos}</span>
+                        <span class="mini-cnt licencia">L ${r.licencias}</span>
+                        <span class="mini-cnt ausente">A ${r.ausentes}</span>
+                        <span class="mini-cnt total">T ${r.total}</span>
                     </div>
                 </div>
                 <div class="registro-card-btns">
@@ -138,10 +138,10 @@ function renderDetalle(registros, modo) {
         const horaAct = reg.hora_actualizacion ? ` · ✏️ ${reg.fecha_actualizacion} ${reg.hora_actualizacion}` : '';
 
         const badgeMap = {
-            'PRESENTE': '<span class="estado-badge presente">✅ PRESENTE</span>',
-            'AUSENTE':  '<span class="estado-badge ausente">❌ AUSENTE</span>',
-            'RETRASO':  '<span class="estado-badge retraso">⏰ RETRASO</span>',
-            'LICENCIA': '<span class="estado-badge licencia">📋 LICENCIA</span>'
+            'PRESENTE': '<span class="estado-badge presente">P Presente</span>',
+            'AUSENTE':  '<span class="estado-badge ausente">A Ausente</span>',
+            'RETRASO':  '<span class="estado-badge retraso">R Retraso</span>',
+            'LICENCIA': '<span class="estado-badge licencia">L Licencia</span>'
         };
 
         // En modo ver: solo badge. En modo actualizar: botones solo para no-presentes
@@ -150,11 +150,11 @@ function renderDetalle(registros, modo) {
             accion = `
                 <div class="estados-update">
                     <button onclick="actualizarEstado('${reg.id}', 'AUSENTE')"
-                        class="btn-estado ${reg.estado === 'AUSENTE' ? 'activo ausente-btn' : ''}">❌</button>
+                        class="btn-estado ${reg.estado === 'AUSENTE' ? 'activo ausente-btn' : ''}">A Ausente</button>
                     <button onclick="actualizarEstado('${reg.id}', 'RETRASO')"
-                        class="btn-estado ${reg.estado === 'RETRASO' ? 'activo retraso-btn' : ''}">⏰</button>
+                        class="btn-estado ${reg.estado === 'RETRASO' ? 'activo retraso-btn' : ''}">R Retraso</button>
                     <button onclick="actualizarEstado('${reg.id}', 'LICENCIA')"
-                        class="btn-estado ${reg.estado === 'LICENCIA' ? 'activo licencia-btn' : ''}">📋</button>
+                        class="btn-estado ${reg.estado === 'LICENCIA' ? 'activo licencia-btn' : ''}">L Licencia</button>
                 </div>`;
         }
 
