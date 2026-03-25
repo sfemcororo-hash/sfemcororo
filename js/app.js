@@ -3817,6 +3817,7 @@ window.addEventListener('DOMContentLoaded', async function() {
     updateEstudiantesCache();
 
     const fromModule = sessionStorage.getItem('fromModule');
+    console.log('fromModule flag:', fromModule, '| currentUser:', localStorage.getItem('currentUser') ? 'existe' : 'no existe');
     if (fromModule) {
         sessionStorage.removeItem('fromModule');
         const user = JSON.parse(localStorage.getItem('currentUser'));
