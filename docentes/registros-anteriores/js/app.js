@@ -3,6 +3,7 @@
 let currentUser = null;
 let fechaBuscada = '';
 let registroActual = { especialidad: '', anio: '', hora: '', fecha: '' };
+let cambiosPendientes = {};
 
 window.addEventListener('DOMContentLoaded', async function () {
     const user = JSON.parse(localStorage.getItem('currentUser'));
@@ -97,6 +98,7 @@ async function buscarRegistros() {
 // ========== VISTA 2: DETALLE ==========
 async function verDetalle(especialidad, anio, hora, fecha, modo) {
     registroActual = { especialidad, anio, hora, fecha, modo };
+    cambiosPendientes = {};
 
     const result = await tursodb.query(`
         SELECT ae.*, e.nombre, e.apellido_paterno, e.apellido_materno, e.codigo_unico
@@ -121,6 +123,11 @@ async function verDetalle(especialidad, anio, hora, fecha, modo) {
 
     renderDetalle(result.rows, modo);
     actualizarContadores(result.rows);
+
+    // Mostrar boton guardar solo en modo actualizar
+    const btnGuardar = document.getElementById('btn-guardar-cambios');
+    btnGuardar.style.display = modo === 'actualizar' ? 'block' : 'none';
+    btnGuardar.textContent = '💾 Guardar';
 }
 
 function renderDetalle(registros, modo) {
@@ -151,11 +158,11 @@ function renderDetalle(registros, modo) {
         if (modo === 'actualizar' && reg.estado !== 'PRESENTE') {
             accion = `
                 <div class="estados-update">
-                    <button onclick="actualizarEstado('${reg.id}', 'AUSENTE')"
+                    <button onclick="marcarCambio('${reg.id}', 'AUSENTE', this)"
                         class="btn-estado ${reg.estado === 'AUSENTE' ? 'activo ausente-btn' : ''}">A Ausente</button>
-                    <button onclick="actualizarEstado('${reg.id}', 'RETRASO')"
+                    <button onclick="marcarCambio('${reg.id}', 'RETRASO', this)"
                         class="btn-estado ${reg.estado === 'RETRASO' ? 'activo retraso-btn' : ''}">R Retraso</button>
-                    <button onclick="actualizarEstado('${reg.id}', 'LICENCIA')"
+                    <button onclick="marcarCambio('${reg.id}', 'LICENCIA', this)"
                         class="btn-estado ${reg.estado === 'LICENCIA' ? 'activo licencia-btn' : ''}">L Licencia</button>
                 </div>`;
         }
@@ -171,25 +178,43 @@ function renderDetalle(registros, modo) {
     });
 }
 
-async function actualizarEstado(registroId, nuevoEstado) {
+function marcarCambio(registroId, nuevoEstado, btn) {
+    cambiosPendientes[registroId] = nuevoEstado;
+
+    const grupo = btn.parentElement;
+    grupo.querySelectorAll('.btn-estado').forEach(b => {
+        b.classList.remove('activo', 'ausente-btn', 'retraso-btn', 'licencia-btn');
+    });
+    btn.classList.add('activo');
+    if (nuevoEstado === 'AUSENTE')  btn.classList.add('ausente-btn');
+    if (nuevoEstado === 'RETRASO')  btn.classList.add('retraso-btn');
+    if (nuevoEstado === 'LICENCIA') btn.classList.add('licencia-btn');
+
+    const total = Object.keys(cambiosPendientes).length;
+    document.getElementById('btn-guardar-cambios').textContent =
+        `💾 Guardar (${total} cambio${total !== 1 ? 's' : ''})`;
+}
+
+async function guardarCambios() {
+    if (Object.keys(cambiosPendientes).length === 0) {
+        volverABuscar();
+        return;
+    }
     const ahora = new Date();
     const hora = ahora.toLocaleTimeString('es-BO', {hour:'2-digit', minute:'2-digit', hour12:false});
-    const fecha = ahora.toISOString().split('T')[0];
+    const fechaAct = ahora.toISOString().split('T')[0];
 
-    await tursodb.query(`
-        UPDATE asistencia_estudiantes
-        SET estado = ?, hora_actualizacion = ?, fecha_actualizacion = ?
-        WHERE id = ?
-    `, [nuevoEstado, hora, fecha, registroId]);
+    for (const [registroId, nuevoEstado] of Object.entries(cambiosPendientes)) {
+        await tursodb.query(`
+            UPDATE asistencia_estudiantes
+            SET estado = ?, hora_actualizacion = ?, fecha_actualizacion = ?
+            WHERE id = ?
+        `, [nuevoEstado, hora, fechaAct, registroId]);
+    }
 
-    // Recargar solo la vista de detalle
-    await verDetalle(
-        registroActual.especialidad,
-        registroActual.anio,
-        registroActual.hora,
-        registroActual.fecha,
-        registroActual.modo
-    );
+    cambiosPendientes = {};
+    alert('Cambios guardados correctamente');
+    volverABuscar();
 }
 
 function actualizarContadores(registros) {
@@ -200,6 +225,7 @@ function actualizarContadores(registros) {
 }
 
 function volverABuscar() {
+    cambiosPendientes = {};
     document.getElementById('vista-detalle').style.display = 'none';
     document.getElementById('vista-buscar').style.display = 'block';
     document.getElementById('btn-volver').onclick = volverDocentes;

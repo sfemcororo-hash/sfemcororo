@@ -67,8 +67,11 @@
 
                 <div id="lista-detalle"></div>
 
-                <div class="botones-accion">
-                    <button onclick="volverABuscar()" class="btn-secondary">← Volver</button>
+                <div class="botones-accion" id="botones-detalle">
+                    <button onclick="volverABuscar()" class="btn-secondary">✕ Cancelar</button>
+                    <button id="btn-guardar-cambios" onclick="guardarCambios()" class="btn-primary" style="display:none;">
+                        💾 Guardar
+                    </button>
                 </div>
             </div>
 
