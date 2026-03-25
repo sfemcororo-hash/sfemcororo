@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESFM - Asistencia</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1><span class="title-line1">ESFM "Simón Bolívar"</span> <span class="title-line2">CORORO</span></h1>
+            <div class="header-right">
+                <button onclick="volverDashboard()" class="btn-secondary">← Volver</button>
+                <div class="user-dropdown" id="user-dropdown-asistencia">
+                    <button class="user-dropdown-btn" onclick="toggleUserDropdown('user-dropdown-asistencia')">
+                        <span class="user-display-name"></span>
+                        <span>▼</span>
+                    </button>
+                    <div class="user-dropdown-content">
+                        <p><strong>Rol:</strong> <span class="dropdown-rol"></span></p>
+                        <button onclick="cerrarSesion()" style="width: 100%; margin-top: 10px;">Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="coming-soon">
+                <div class="coming-soon-icon">📋</div>
+                <h2>Módulo de Asistencia</h2>
+                <p>En desarrollo. Próximamente disponible.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/tursodb.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
