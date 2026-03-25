@@ -13,25 +13,94 @@
             <h1><span class="title-line1">ESFM "Simón Bolívar"</span> <span class="title-line2">CORORO</span></h1>
             <div class="header-right">
                 <button onclick="volverDocentes()" class="btn-secondary">← Volver</button>
-                <div class="user-dropdown" id="user-dropdown-tomar-asistencia">
-                    <button class="user-dropdown-btn" onclick="toggleUserDropdown('user-dropdown-tomar-asistencia')">
+                <div class="user-dropdown" id="user-dropdown-ta">
+                    <button class="user-dropdown-btn" onclick="toggleUserDropdown('user-dropdown-ta')">
                         <span class="user-display-name"></span>
                         <span>▼</span>
                     </button>
                     <div class="user-dropdown-content">
                         <p><strong>Rol:</strong> <span class="dropdown-rol"></span></p>
-                        <button onclick="cerrarSesion()" style="width: 100%; margin-top: 10px;">Cerrar Sesión</button>
+                        <button onclick="cerrarSesion()" style="width:100%; margin-top:10px;">Cerrar Sesión</button>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="container">
-            <div class="coming-soon">
-                <div class="coming-soon-icon">📝</div>
-                <h2>Tomar Asistencia</h2>
-                <p>En desarrollo. Próximamente disponible.</p>
+
+            <!-- PASO 1: Seleccionar grupo -->
+            <div id="paso-seleccion" class="card">
+                <h2>📋 Tomar Asistencia</h2>
+                <p class="subtitle">Selecciona el grupo para llamar lista</p>
+
+                <div class="form-group">
+                    <label>Especialidad</label>
+                    <select id="sel-especialidad" onchange="cargarAnios()">
+                        <option value="">-- Selecciona especialidad --</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="grupo-anio" style="display:none;">
+                    <label>Año de Formación</label>
+                    <select id="sel-anio">
+                        <option value="">-- Selecciona año --</option>
+                    </select>
+                </div>
+
+                <button onclick="cargarLista()" class="btn-primary btn-full" id="btn-cargar" style="display:none;">
+                    📋 Cargar Lista
+                </button>
             </div>
+
+            <!-- PASO 2: Lista de asistencia -->
+            <div id="paso-lista" style="display:none;">
+                <div class="lista-header">
+                    <div>
+                        <h2 id="lista-titulo"></h2>
+                        <p id="lista-fecha" class="subtitle"></p>
+                    </div>
+                    <div class="contadores">
+                        <span class="contador presente">✅ <span id="cnt-presente">0</span></span>
+                        <span class="contador ausente">❌ <span id="cnt-ausente">0</span></span>
+                    </div>
+                </div>
+
+                <div class="acciones-rapidas">
+                    <button onclick="marcarTodos('PRESENTE')" class="btn-success">✅ Todos presentes</button>
+                    <button onclick="marcarTodos('AUSENTE')" class="btn-danger">❌ Todos ausentes</button>
+                </div>
+
+                <div id="lista-estudiantes"></div>
+
+                <button onclick="guardarAsistencia()" class="btn-primary btn-full btn-guardar">
+                    💾 Guardar Asistencia
+                </button>
+            </div>
+
+            <!-- PASO 3: Actualizar registro existente -->
+            <div id="paso-actualizar" style="display:none;">
+                <div class="lista-header">
+                    <div>
+                        <h2 id="act-titulo"></h2>
+                        <p id="act-fecha" class="subtitle"></p>
+                    </div>
+                    <div class="contadores">
+                        <span class="contador presente">✅ <span id="act-cnt-presente">0</span></span>
+                        <span class="contador retraso">⏰ <span id="act-cnt-retraso">0</span></span>
+                        <span class="contador licencia">📋 <span id="act-cnt-licencia">0</span></span>
+                        <span class="contador ausente">❌ <span id="act-cnt-ausente">0</span></span>
+                    </div>
+                </div>
+
+                <p class="info-box">Solo puedes modificar los estudiantes marcados como <strong>Ausente</strong></p>
+
+                <div id="lista-actualizar"></div>
+
+                <button onclick="volverSeleccion()" class="btn-secondary btn-full" style="margin-top:15px;">
+                    ← Nueva asistencia
+                </button>
+            </div>
+
         </div>
     </div>
 

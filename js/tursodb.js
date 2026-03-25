@@ -321,6 +321,22 @@ class TursoDB {
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        await this.query(`
+            CREATE TABLE IF NOT EXISTS asistencia_estudiantes (
+                id TEXT PRIMARY KEY,
+                estudiante_id TEXT NOT NULL,
+                docente_id TEXT NOT NULL,
+                especialidad TEXT NOT NULL,
+                anio_formacion TEXT NOT NULL,
+                estado TEXT NOT NULL DEFAULT 'PRESENTE',
+                fecha TEXT NOT NULL,
+                hora_registro TEXT NOT NULL,
+                hora_actualizacion TEXT,
+                motivo TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
         
         // Insertar usuario admin si no existe (legacy - ya no se usa)
         const oldAdminExists = await this.query('SELECT id FROM usuarios WHERE id = ?', ['1']);
