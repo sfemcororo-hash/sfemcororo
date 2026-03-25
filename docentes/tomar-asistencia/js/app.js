@@ -91,6 +91,9 @@ async function cargarLista() {
     estadosEstudiantes = {};
     result.rows.forEach(est => { estadosEstudiantes[est.id] = 'PRESENTE'; });
 
+    // Ocultar registros del día al entrar a tomar lista
+    document.querySelectorAll('.registros-hoy').forEach(el => el.style.display = 'none');
+
     // Mostrar lista
     document.getElementById('paso-seleccion').style.display = 'none';
     document.getElementById('paso-lista').style.display = 'block';
