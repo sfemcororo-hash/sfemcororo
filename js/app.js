@@ -3824,7 +3824,11 @@ window.addEventListener('DOMContentLoaded', async function() {
         if (user) {
             currentUser = user;
             showDashboard();
+        } else {
+            showLogin();
         }
+    } else {
+        showLogin();
     }
 
     await tursodb.initializeData();
