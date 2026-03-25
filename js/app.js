@@ -92,9 +92,7 @@ function loadEstudiantesCache() {
     try {
         const saved = localStorage.getItem('estudiantes_cache');
         estudiantesCache = saved ? JSON.parse(saved) : [];
-        console.log(`Cache de estudiantes cargado: ${estudiantesCache.length} estudiantes`);
     } catch (error) {
-        console.error('Error cargando cache de estudiantes:', error);
         estudiantesCache = [];
     }
 }
@@ -103,9 +101,8 @@ function loadEstudiantesCache() {
 function saveEstudiantesCache() {
     try {
         localStorage.setItem('estudiantes_cache', JSON.stringify(estudiantesCache));
-        console.log(`Cache de estudiantes guardado: ${estudiantesCache.length} estudiantes`);
     } catch (error) {
-        console.error('Error guardando cache de estudiantes:', error);
+        estudiantesCache = [];
     }
 }
 
@@ -116,11 +113,8 @@ async function updateEstudiantesCache() {
         if (!error && data) {
             estudiantesCache = data;
             saveEstudiantesCache();
-            console.log(`Cache actualizado con ${data.length} estudiantes`);
         }
-    } catch (error) {
-        console.log('No se pudo actualizar cache de estudiantes (sin conexión)');
-    }
+    } catch (error) {}
 }
 
 // Buscar estudiante en cache local
@@ -133,10 +127,8 @@ function loadOfflineQueue() {
     try {
         const saved = localStorage.getItem('asistencias_offline');
         offlineQueue = saved ? JSON.parse(saved) : [];
-        console.log(`Cola offline cargada: ${offlineQueue.length} asistencias pendientes`);
         updateOfflineIndicator();
     } catch (error) {
-        console.error('Error cargando cola offline:', error);
         offlineQueue = [];
     }
 }
@@ -281,10 +273,7 @@ async function syncOfflineQueue() {
 }
 
 // Iniciar sincronización automática - DESHABILITADO
-function startAutoSync() {
-    // Sincronización manual solamente
-    console.log('Sincronización automática deshabilitada - usar botón Sync manual');
-}
+function startAutoSync() {}
 
 // Forzar sincronización manual
 async function forceSyncOffline() {
@@ -3817,7 +3806,6 @@ window.addEventListener('DOMContentLoaded', async function() {
     updateEstudiantesCache();
 
     const fromModule = sessionStorage.getItem('fromModule');
-    console.log('fromModule flag:', fromModule, '| currentUser:', localStorage.getItem('currentUser') ? 'existe' : 'no existe');
     if (fromModule) {
         sessionStorage.removeItem('fromModule');
         const user = JSON.parse(localStorage.getItem('currentUser'));
