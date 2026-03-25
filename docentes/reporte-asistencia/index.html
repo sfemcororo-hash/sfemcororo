@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESFM - Reporte de Asistencia</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1><span class="title-line1">ESFM "Simón Bolívar"</span> <span class="title-line2">CORORO</span></h1>
+            <div class="header-right">
+                <button onclick="volverDocentes()" class="btn-secondary">← Volver</button>
+                <div class="user-dropdown" id="user-dropdown-rep">
+                    <button class="user-dropdown-btn" onclick="toggleUserDropdown('user-dropdown-rep')">
+                        <span class="user-display-name"></span>
+                        <span>▼</span>
+                    </button>
+                    <div class="user-dropdown-content">
+                        <p><strong>Rol:</strong> <span class="dropdown-rol"></span></p>
+                        <button onclick="cerrarSesion()" style="width:100%; margin-top:10px;">Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Selección -->
+            <div class="card">
+                <h2>📊 Reporte de Asistencia</h2>
+                <p class="subtitle">Selecciona el grupo para generar el reporte</p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Especialidad</label>
+                        <select id="sel-especialidad" onchange="cargarAnios()">
+                            <option value="">-- Selecciona --</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="grupo-anio" style="display:none;">
+                        <label>Año de Formación</label>
+                        <select id="sel-anio">
+                            <option value="">-- Selecciona --</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="generarReporte()" class="btn-primary btn-full" id="btn-generar" style="display:none;">
+                    📊 Generar Reporte
+                </button>
+            </div>
+
+            <!-- Reporte -->
+            <div id="reporte-container" style="display:none;">
+                <!-- Encabezado del reporte -->
+                <div class="reporte-header">
+                    <div class="reporte-titulo">
+                        <h2>ESFM "Simón Bolívar" - CORORO</h2>
+                        <h3>REPORTE DE ASISTENCIA</h3>
+                    </div>
+                    <div class="reporte-meta">
+                        <p><strong>Especialidad:</strong> <span id="rep-especialidad"></span></p>
+                        <p><strong>Año de Formación:</strong> <span id="rep-anio"></span></p>
+                        <p><strong>Generado por:</strong> <span id="rep-usuario"></span></p>
+                        <p><strong>Fecha de reporte:</strong> <span id="rep-fecha"></span></p>
+                        <p><strong>Total de clases registradas:</strong> <span id="rep-total-clases"></span></p>
+                    </div>
+                </div>
+
+                <!-- Tabla -->
+                <div class="tabla-wrapper">
+                    <table id="tabla-reporte">
+                        <thead id="tabla-head"></thead>
+                        <tbody id="tabla-body"></tbody>
+                    </table>
+                </div>
+
+                <button onclick="window.print()" class="btn-success btn-full" style="margin-top:15px;">
+                    🖨️ Imprimir / Guardar PDF
+                </button>
+
+                <div class="leyenda">
+                    <span><span class="est-presente" style="padding:2px 6px; border-radius:3px;">P</span> Presente</span>
+                    <span><span class="est-ausente" style="padding:2px 6px; border-radius:3px;">A</span> Ausente</span>
+                    <span><span class="est-retraso" style="padding:2px 6px; border-radius:3px;">R</span> Retraso</span>
+                    <span><span class="est-licencia" style="padding:2px 6px; border-radius:3px;">L</span> Licencia</span>
+                    <span><span style="color:#ccc; padding:2px 6px;">-</span> Sin registro</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../js/tursodb.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
