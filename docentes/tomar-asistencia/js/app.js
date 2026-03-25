@@ -217,7 +217,7 @@ async function verificarRegistroHoy() {
     const result = await tursodb.query(`
         SELECT DISTINCT especialidad, anio_formacion, hora_registro
         FROM asistencia_estudiantes
-        WHERE docente_id = ? AND fecha = ?
+        WHERE CAST(docente_id AS TEXT) = CAST(? AS TEXT) AND fecha = ?
         ORDER BY hora_registro DESC
     `, [currentUser.id, fecha]);
 
@@ -247,7 +247,7 @@ async function cargarActualizacion(especialidad, anio, fecha) {
         SELECT ae.*, e.nombre, e.apellido_paterno, e.apellido_materno, e.codigo_unico
         FROM asistencia_estudiantes ae
         JOIN estudiantes e ON ae.estudiante_id = e.id
-        WHERE ae.especialidad = ? AND ae.anio_formacion = ? AND ae.fecha = ? AND ae.docente_id = ?
+        WHERE ae.especialidad = ? AND ae.anio_formacion = ? AND ae.fecha = ? AND CAST(ae.docente_id AS TEXT) = CAST(? AS TEXT)
         ORDER BY e.apellido_paterno, e.nombre
     `, [especialidad, anio, fecha, currentUser.id]);
 

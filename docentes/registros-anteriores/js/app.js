@@ -51,7 +51,7 @@ async function buscarRegistros() {
             SUM(CASE WHEN estado = 'LICENCIA' THEN 1 ELSE 0 END) as licencias,
             COUNT(*) as total
         FROM asistencia_estudiantes
-        WHERE docente_id = ? AND fecha = ?
+        WHERE CAST(docente_id AS TEXT) = CAST(? AS TEXT) AND fecha = ?
         GROUP BY especialidad, anio_formacion, hora_registro
         ORDER BY hora_registro DESC
     `, [currentUser.id, fecha]);
@@ -112,7 +112,7 @@ async function toggleDetalle(btn, especialidad, anio, hora, fecha) {
         SELECT ae.*, e.nombre, e.apellido_paterno, e.apellido_materno, e.codigo_unico
         FROM asistencia_estudiantes ae
         JOIN estudiantes e ON ae.estudiante_id = e.id
-        WHERE ae.especialidad = ? AND ae.anio_formacion = ? AND ae.hora_registro = ? AND ae.fecha = ? AND ae.docente_id = ?
+        WHERE ae.especialidad = ? AND ae.anio_formacion = ? AND ae.hora_registro = ? AND ae.fecha = ? AND CAST(ae.docente_id AS TEXT) = CAST(? AS TEXT)
         ORDER BY e.apellido_paterno, e.nombre
     `, [especialidad, anio, hora, fecha, currentUser.id]);
 
@@ -120,7 +120,6 @@ async function toggleDetalle(btn, especialidad, anio, hora, fecha) {
         container.innerHTML = '<p style="padding:10px; color:#666;">Sin datos</p>';
     } else {
         renderListaInline(container, result.rows, especialidad, anio, hora, fecha);
-        actualizarContadoresCard(result.rows, especialidad, anio, hora);
     }
 
     container.style.display = 'block';
@@ -185,7 +184,7 @@ async function actualizarEstado(registroId, nuevoEstado, especialidad, anio, hor
         SELECT ae.*, e.nombre, e.apellido_paterno, e.apellido_materno, e.codigo_unico
         FROM asistencia_estudiantes ae
         JOIN estudiantes e ON ae.estudiante_id = e.id
-        WHERE ae.especialidad = ? AND ae.anio_formacion = ? AND ae.hora_registro = ? AND ae.fecha = ? AND ae.docente_id = ?
+        WHERE ae.especialidad = ? AND ae.anio_formacion = ? AND ae.hora_registro = ? AND ae.fecha = ? AND CAST(ae.docente_id AS TEXT) = CAST(? AS TEXT)
         ORDER BY e.apellido_paterno, e.nombre
     `, [especialidad, anio, hora, fecha, currentUser.id]);
 
@@ -194,6 +193,5 @@ async function actualizarEstado(registroId, nuevoEstado, especialidad, anio, hor
 }
 
 function actualizarContadoresCard(registros, especialidad, anio, hora) {
-    // Actualizar mini contadores de la tarjeta
-    buscarRegistros();
+    // No recargar todo, los contadores se actualizan al recargar la lista inline
 }
