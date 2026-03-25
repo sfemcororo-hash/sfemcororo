@@ -3815,15 +3815,17 @@ window.addEventListener('DOMContentLoaded', async function() {
     loadEstudiantesCache();
     startAutoSync();
     updateEstudiantesCache();
-    
-    // Verificar sesión PRIMERO antes de cualquier otra cosa
-    const user = JSON.parse(localStorage.getItem('currentUser'));
-    if (user) {
-        currentUser = user;
-        showDashboard();
+
+    const fromModule = sessionStorage.getItem('fromModule');
+    if (fromModule) {
+        sessionStorage.removeItem('fromModule');
+        const user = JSON.parse(localStorage.getItem('currentUser'));
+        if (user) {
+            currentUser = user;
+            showDashboard();
+        }
     }
-    
-    // Inicializar BD en segundo plano
+
     await tursodb.initializeData();
 });
 

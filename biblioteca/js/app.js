@@ -11,5 +11,6 @@ window.addEventListener('DOMContentLoaded', async function () {
 });
 
 function volverDashboard() {
-    history.back();
+    sessionStorage.setItem('fromModule', '1');
+    window.location.href = '../index.html';
 }
