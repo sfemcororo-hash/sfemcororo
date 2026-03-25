@@ -353,3 +353,71 @@ input[type="date"] {
     cursor: pointer;
 }
 input[type="date"]:focus { outline: none; border-color: #007bff; }
+
+/* Tarjeta de registro */
+.registro-card {
+    background: white;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    overflow: hidden;
+}
+
+.registro-card-header {
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+    border-left: 4px solid #007bff;
+}
+
+.registro-card-header strong {
+    display: block;
+    color: #222;
+    font-size: 15px;
+}
+
+.registro-card-header small {
+    color: #666;
+    font-size: 12px;
+    margin-top: 3px;
+    display: block;
+}
+
+.btn-toggle-lista {
+    width: 100%;
+    background: #f8f9fa;
+    border: none;
+    border-top: 1px solid #eee;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #007bff;
+    transition: background 0.2s;
+}
+.btn-toggle-lista:hover { background: #e9ecef; }
+
+/* Lista inline dentro de tarjeta */
+.lista-inline {
+    display: none;
+    border-top: 1px solid #eee;
+    padding: 8px;
+    background: #fafafa;
+}
+
+.est-row-inline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    background: white;
+    border-radius: 8px;
+    border-left: 3px solid #28a745;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.est-row-inline.ausente { border-left-color: #dc3545; background: #fff8f8; }

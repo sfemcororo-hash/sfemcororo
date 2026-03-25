@@ -173,8 +173,19 @@ async function guardarAsistencia() {
     const total = Object.keys(estadosEstudiantes).length;
     const presentes = Object.values(estadosEstudiantes).filter(e => e === 'PRESENTE').length;
 
-    const confirmar = confirm(`¿Guardar asistencia?\n\n✅ Presentes: ${presentes}\n❌ Ausentes: ${total - presentes}\n\nGrupo: ${especialidad} - ${anio}`);
-    if (!confirmar) return;
+    // Verificar si ya existe un registro de este grupo hoy
+    const existe = await tursodb.query(`
+        SELECT COUNT(*) as total FROM asistencia_estudiantes
+        WHERE docente_id = ? AND especialidad = ? AND anio_formacion = ? AND fecha = ?
+    `, [currentUser.id, especialidad, anio, fecha]);
+
+    if (existe.rows && parseInt(existe.rows[0].total) > 0) {
+        const confirmar = confirm(`⚠️ Ya existe un registro de asistencia para este grupo hoy.\n\n¿Deseas guardar un nuevo registro de todas formas?`);
+        if (!confirmar) return;
+    } else {
+        const confirmar = confirm(`¿Guardar asistencia?\n\n✅ Presentes: ${presentes}\n❌ Ausentes: ${total - presentes}\n\nGrupo: ${especialidad} - ${anio}`);
+        if (!confirmar) return;
+    }
 
     try {
         for (const [estudianteId, estado] of Object.entries(estadosEstudiantes)) {
