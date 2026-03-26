@@ -125,15 +125,15 @@ async function generarReporte() {
     if (materia === 'TODAS') {
         clasesQuery = `SELECT DISTINCT fecha, hora_registro, materia
                        FROM asistencia_estudiantes
-                       WHERE especialidad = ? AND anio_formacion = ?
+                       WHERE especialidad = ? AND anio_formacion = ? AND docente_id = ?
                        ORDER BY fecha ASC, hora_registro ASC`;
-        clasesParams = [especialidad, anio];
+        clasesParams = [especialidad, anio, String(currentUser.id)];
     } else {
         clasesQuery = `SELECT DISTINCT fecha, hora_registro, materia
                        FROM asistencia_estudiantes
-                       WHERE especialidad = ? AND anio_formacion = ? AND materia = ?
+                       WHERE especialidad = ? AND anio_formacion = ? AND materia = ? AND docente_id = ?
                        ORDER BY fecha ASC, hora_registro ASC`;
-        clasesParams = [especialidad, anio, materia];
+        clasesParams = [especialidad, anio, materia, String(currentUser.id)];
     }
     const clasesResult = await tursodb.query(clasesQuery, clasesParams);
     const clases = clasesResult.rows || [];
@@ -145,11 +145,11 @@ async function generarReporte() {
     // 3. Registros de asistencia
     let asistQuery, asistParams;
     if (materia === 'TODAS') {
-        asistQuery = `SELECT estudiante_id, fecha, hora_registro, materia, estado FROM asistencia_estudiantes WHERE especialidad = ? AND anio_formacion = ?`;
-        asistParams = [especialidad, anio];
+        asistQuery = `SELECT estudiante_id, fecha, hora_registro, materia, estado FROM asistencia_estudiantes WHERE especialidad = ? AND anio_formacion = ? AND docente_id = ?`;
+        asistParams = [especialidad, anio, String(currentUser.id)];
     } else {
-        asistQuery = `SELECT estudiante_id, fecha, hora_registro, materia, estado FROM asistencia_estudiantes WHERE especialidad = ? AND anio_formacion = ? AND materia = ?`;
-        asistParams = [especialidad, anio, materia];
+        asistQuery = `SELECT estudiante_id, fecha, hora_registro, materia, estado FROM asistencia_estudiantes WHERE especialidad = ? AND anio_formacion = ? AND materia = ? AND docente_id = ?`;
+        asistParams = [especialidad, anio, materia, String(currentUser.id)];
     }
     const asistResult = await tursodb.query(asistQuery, asistParams);
     const registros = asistResult.rows || [];
