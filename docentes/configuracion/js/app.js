@@ -111,8 +111,8 @@ async function renderMaterias(materias) {
 
     for (const m of materias) {
         const registros = await tursodb.query(
-            `SELECT COUNT(*) as total FROM asistencia_estudiantes WHERE materia = ? AND especialidad = ? AND anio_formacion = ?`,
-            [m.nombre, especialidad, anio]
+            `SELECT COUNT(*) as total FROM asistencia_estudiantes WHERE materia = ? AND especialidad = ? AND anio_formacion = ? AND docente_id = ?`,
+            [m.nombre, especialidad, anio, String(currentUser.id)]
         );
         const total = parseInt(registros.rows?.[0]?.total || 0);
         const tieneRegistros = total > 0;
@@ -174,8 +174,8 @@ async function eliminarMateria(id, nombre) {
     const anio = document.getElementById('mat-anio').value;
 
     const registros = await tursodb.query(
-        `SELECT COUNT(*) as total FROM asistencia_estudiantes WHERE materia = ? AND especialidad = ? AND anio_formacion = ?`,
-        [nombre, especialidad, anio]
+        `SELECT COUNT(*) as total FROM asistencia_estudiantes WHERE materia = ? AND especialidad = ? AND anio_formacion = ? AND docente_id = ?`,
+        [nombre, especialidad, anio, String(currentUser.id)]
     );
 
     const total = parseInt(registros.rows?.[0]?.total || 0);
