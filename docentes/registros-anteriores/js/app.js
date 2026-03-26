@@ -237,3 +237,44 @@ function volverABuscar() {
     document.getElementById('vista-buscar').style.display = 'block';
     document.getElementById('btn-volver').onclick = volverDocentes;
 }
+
+async function eliminarRegistro() {
+    const { especialidad, anio, hora, fecha } = registroActual;
+    const [anioF, mes, dia] = fecha.split('-');
+
+    // Contar registros
+    const conteo = await tursodb.query(`
+        SELECT COUNT(*) as total FROM asistencia_estudiantes
+        WHERE especialidad = ? AND anio_formacion = ? AND hora_registro = ? AND fecha = ? AND docente_id = ?
+    `, [especialidad, anio, hora, fecha, String(currentUser.id)]);
+    const total = parseInt(conteo.rows?.[0]?.total || 0);
+
+    const materia = document.getElementById('det-info').textContent.split('|')[0].replace('📖','').trim();
+
+    // Pedir confirmacion escribiendo "eliminar"
+    const confirmacion = prompt(
+        `⚠️ ELIMINAR REGISTRO DE ASISTENCIA\n\n` +
+        `Grupo: ${especialidad} - ${anio}\n` +
+        `Materia: ${materia}\n` +
+        `Fecha: ${dia}/${mes}/${anioF} | Hora: ${hora}\n` +
+        `Total registros: ${total} estudiantes\n\n` +
+        `Esta accion eliminara TODOS los registros de este grupo en esta fecha y hora.\n` +
+        `Tambien desaparecera de los reportes de asistencia.\n\n` +
+        `Escribe ELIMINAR para confirmar:`
+    );
+
+    if (confirmacion === null) return;
+    if (confirmacion.trim().toUpperCase() !== 'ELIMINAR') {
+        alert('Texto incorrecto. No se eliminaron los registros.');
+        return;
+    }
+
+    await tursodb.query(`
+        DELETE FROM asistencia_estudiantes
+        WHERE especialidad = ? AND anio_formacion = ? AND hora_registro = ? AND fecha = ? AND docente_id = ?
+    `, [especialidad, anio, hora, fecha, String(currentUser.id)]);
+
+    alert(`✅ Registro eliminado correctamente.\n${total} registros de asistencia eliminados.`);
+    volverABuscar();
+    await buscarRegistros();
+}
