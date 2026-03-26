@@ -475,3 +475,12 @@ input[type="date"]:focus { outline: none; border-color: #007bff; }
     transition: background 0.2s;
 }
 .btn-actualizar:hover { background: #e0a800; }
+
+/* Forzar visibilidad del boton eliminar */
+#botones-detalle .btn-danger {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    background: #dc3545 !important;
+    color: white !important;
+}
