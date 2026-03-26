@@ -484,3 +484,16 @@ input[type="date"]:focus { outline: none; border-color: #007bff; }
     background: #dc3545 !important;
     color: white !important;
 }
+
+.btn-eliminar {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+.btn-eliminar:hover { background: #bd2130; }

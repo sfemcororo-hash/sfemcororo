@@ -93,6 +93,7 @@ async function buscarRegistros() {
                 <div class="registro-card-btns">
                     <button onclick="verDetalle('${r.especialidad}', '${r.anio_formacion}', '${r.hora_registro}', '${fecha}', 'ver')" class="btn-ver">👁 Ver</button>
                     <button onclick="verDetalle('${r.especialidad}', '${r.anio_formacion}', '${r.hora_registro}', '${fecha}', 'actualizar')" class="btn-actualizar">✏️ Actualizar</button>
+                    <button onclick="eliminarRegistroDirecto('${r.especialidad}', '${r.anio_formacion}', '${r.hora_registro}', '${fecha}', '${r.materia || ''}', ${r.total})" class="btn-eliminar">🗑️ Eliminar</button>
                 </div>
             </div>
         `;
@@ -236,6 +237,29 @@ function volverABuscar() {
     document.getElementById('vista-detalle').style.display = 'none';
     document.getElementById('vista-buscar').style.display = 'block';
     document.getElementById('btn-volver').onclick = volverDocentes;
+}
+
+async function eliminarRegistroDirecto(especialidad, anio, hora, fecha, materia, total) {
+    const [anioF, mes, dia] = fecha.split('-');
+    const confirmacion = prompt(
+        `ELIMINAR REGISTRO DE ASISTENCIA\n\n` +
+        `Grupo: ${especialidad} - ${anio}\n` +
+        `Materia: ${materia || 'Sin materia'}\n` +
+        `Fecha: ${dia}/${mes}/${anioF} | Hora: ${hora}\n` +
+        `Total: ${total} estudiantes\n\n` +
+        `Escribe ELIMINAR para confirmar:`
+    );
+    if (confirmacion === null) return;
+    if (confirmacion.trim().toUpperCase() !== 'ELIMINAR') {
+        alert('Texto incorrecto. No se eliminaron los registros.');
+        return;
+    }
+    await tursodb.query(`
+        DELETE FROM asistencia_estudiantes
+        WHERE especialidad = ? AND anio_formacion = ? AND hora_registro = ? AND fecha = ? AND docente_id = ?
+    `, [especialidad, anio, hora, fecha, String(currentUser.id)]);
+    alert(`Registro eliminado correctamente. ${total} registros eliminados.`);
+    await buscarRegistros();
 }
 
 async function eliminarRegistro() {
