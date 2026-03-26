@@ -174,6 +174,7 @@ class TursoDB {
     
     // Inicializar datos
     async initializeData() {
+        if (sessionStorage.getItem('db_initialized')) return;
         // Eliminar tablas obsoletas
         await this.query(`DROP TABLE IF EXISTS perfiles`);
         await this.query(`DROP TABLE IF EXISTS estudiantes_old`);
@@ -383,9 +384,10 @@ class TursoDB {
         // Insertar usuario admin si no existe (legacy - ya no se usa)
         const oldAdminExists = await this.query('SELECT id FROM usuarios WHERE id = ?', ['1']);
         if (oldAdminExists.rows && oldAdminExists.rows.length > 0) {
-            // Eliminar admin legacy
             await this.query('DELETE FROM usuarios WHERE id = ?', ['1']);
         }
+
+        sessionStorage.setItem('db_initialized', '1');
     }
 }
 
