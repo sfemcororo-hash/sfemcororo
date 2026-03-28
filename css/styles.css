@@ -293,6 +293,7 @@ h3 { color: #2c3e50; margin-bottom: 15px; }
     padding-right: 44px;
     width: 100%;
     box-sizing: border-box;
+    display: block;
 }
 
 .toggle-password {
@@ -305,10 +306,14 @@ h3 { color: #2c3e50; margin-bottom: 15px; }
     cursor: pointer;
     font-size: 18px;
     padding: 0;
-    width: auto;
+    width: 24px;
+    height: 24px;
     line-height: 1;
     opacity: 0.5;
     transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .toggle-password:hover {
