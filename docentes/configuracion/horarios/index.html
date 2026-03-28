@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESFM - Horarios</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕐</text></svg>">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1><span class="title-line1">ESFM "Simón Bolívar"</span> <span class="title-line2">CORORO</span></h1>
+            <div class="header-right">
+                <button id="btn-volver" onclick="volverConfiguracion()" class="btn-secondary">← Volver</button>
+                <div class="user-dropdown" id="user-dropdown-hor">
+                    <button class="user-dropdown-btn" onclick="toggleUserDropdown('user-dropdown-hor')">
+                        <span class="user-display-name"></span>
+                        <span>▼</span>
+                    </button>
+                    <div class="user-dropdown-content">
+                        <p><strong>Rol:</strong> <span class="dropdown-rol"></span></p>
+                        <button onclick="cerrarSesion()" style="width:100%; margin-top:10px;">Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+
+            <!-- VISTA 1: Menú -->
+            <div id="vista-menu">
+                <div class="modules-grid">
+                    <div class="module-card" onclick="mostrarVista('vista-agregar')">
+                        <div class="module-icon">➕</div>
+                        <h3>Agregar Horario</h3>
+                        <p>Crear horarios por especialidad y materia</p>
+                    </div>
+                    <div class="module-card" onclick="mostrarVista('vista-ver')">
+                        <div class="module-icon">📋</div>
+                        <h3>Ver Horarios</h3>
+                        <p>Ver grilla semanal por especialidad y año</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VISTA 2: Agregar horario -->
+            <div id="vista-agregar" style="display:none;">
+                <div class="card">
+                    <h2>➕ Agregar Horario</h2>
+                    <p class="subtitle">Define el horario de una materia</p>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Especialidad</label>
+                            <select id="hor-especialidad" onchange="cargarAniosHorario()">
+                                <option value="">-- Selecciona --</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="hor-grupo-anio" style="display:none;">
+                            <label>Año de Formación</label>
+                            <select id="hor-anio" onchange="cargarMateriasHorario()">
+                                <option value="">-- Selecciona --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="hor-form-detalle" style="display:none;">
+                        <div class="form-group">
+                            <label>Materia</label>
+                            <select id="hor-materia">
+                                <option value="">-- Selecciona --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Día de la semana</label>
+                            <select id="hor-dia">
+                                <option value="">-- Selecciona --</option>
+                                <option value="LUNES">Lunes</option>
+                                <option value="MARTES">Martes</option>
+                                <option value="MIÉRCOLES">Miércoles</option>
+                                <option value="JUEVES">Jueves</option>
+                                <option value="VIERNES">Viernes</option>
+                                <option value="SÁBADO">Sábado</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Hora inicio</label>
+                                <input type="time" id="hor-inicio">
+                            </div>
+                            <div class="form-group">
+                                <label>Hora fin</label>
+                                <input type="time" id="hor-fin">
+                            </div>
+                        </div>
+                        <button onclick="agregarHorario()" class="btn-primary btn-full">➕ Agregar Horario</button>
+                    </div>
+                </div>
+
+                <!-- Lista de horarios del grupo seleccionado -->
+                <div id="hor-lista-container" style="display:none;">
+                    <h3 id="hor-lista-titulo" style="color:white; margin-bottom:12px;"></h3>
+                    <div id="hor-lista"></div>
+                </div>
+
+                <button onclick="mostrarVista('vista-menu')" class="btn-secondary btn-full" style="margin-top:15px;">← Volver</button>
+            </div>
+
+            <!-- VISTA 3: Ver horarios -->
+            <div id="vista-ver" style="display:none;">
+                <div class="card">
+                    <h2>📋 Ver Horarios</h2>
+                    <p class="subtitle">Selecciona el grupo para ver su grilla semanal</p>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Especialidad</label>
+                            <select id="ver-especialidad" onchange="cargarAniosVer()">
+                                <option value="">-- Selecciona --</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="ver-grupo-anio" style="display:none;">
+                            <label>Año de Formación</label>
+                            <select id="ver-anio" onchange="verHorarios()">
+                                <option value="">-- Selecciona --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="ver-grilla" style="display:none;"></div>
+
+                <button onclick="mostrarVista('vista-menu')" class="btn-secondary btn-full" style="margin-top:15px;">← Volver</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="../../../js/tursodb.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -365,6 +365,20 @@ class TursoDB {
         `);
 
         await this.query(`
+            CREATE TABLE IF NOT EXISTS horarios (
+                id TEXT PRIMARY KEY,
+                especialidad TEXT NOT NULL,
+                anio_formacion TEXT NOT NULL,
+                materia TEXT NOT NULL,
+                dia_semana TEXT NOT NULL,
+                hora_inicio TEXT NOT NULL,
+                hora_fin TEXT NOT NULL,
+                docente_id TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        await this.query(`
             CREATE TABLE IF NOT EXISTS asistencia_estudiantes (
                 id TEXT PRIMARY KEY,
                 estudiante_id TEXT NOT NULL,
