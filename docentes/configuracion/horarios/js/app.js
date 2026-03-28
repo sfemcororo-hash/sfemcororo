@@ -55,6 +55,20 @@ function mostrarVista(id) {
     document.querySelectorAll('.container > div').forEach(el => el.style.display = 'none');
     document.getElementById(id).style.display = 'block';
     document.getElementById('btn-volver').onclick = id === 'vista-menu' ? volverConfiguracion : () => mostrarVista('vista-menu');
+    // Limpiar formulario al volver al menu o al mostrar agregar
+    if (id === 'vista-menu' || id === 'vista-agregar') {
+        limpiarFormulario();
+    }
+}
+
+function limpiarFormulario() {
+    ['hor-especialidad','hor-anio','hor-materia','hor-dia','hor-inicio','hor-fin'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    document.getElementById('hor-grupo-anio').style.display = 'none';
+    document.getElementById('hor-form-detalle').style.display = 'none';
+    document.getElementById('hor-lista-container').style.display = 'none';
 }
 
 // ========== HELPERS ==========
