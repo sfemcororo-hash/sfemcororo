@@ -403,6 +403,16 @@ function togglePassword() {
     }
 }
 
+// Enter para login
+document.addEventListener('DOMContentLoaded', function() {
+    ['email', 'password'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') login();
+        });
+    });
+});
+
 async function login() {
     const emailOrCi = document.getElementById('email').value;
     const password = document.getElementById('password').value;
