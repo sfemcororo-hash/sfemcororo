@@ -200,61 +200,74 @@ async function eliminarHorario(id) {
 
 // ========== VER HORARIOS ==========
 async function cargarAniosVer() {
-    await cargarAnios('ver-especialidad', 'ver-anio', 'ver-grupo-anio', verHorarios);
+    await cargarAnios('ver-especialidad', 'ver-anio', 'ver-grupo-anio', cargarMateriasVer);
+    document.getElementById('ver-grupo-materia').style.display = 'none';
     document.getElementById('ver-grilla').style.display = 'none';
+}
+
+async function cargarMateriasVer() {
+    const especialidad = document.getElementById('ver-especialidad').value;
+    const anio = document.getElementById('ver-anio').value;
+    document.getElementById('ver-grilla').style.display = 'none';
+    if (!anio) { document.getElementById('ver-grupo-materia').style.display = 'none'; return; }
+
+    const result = await tursodb.query(
+        `SELECT DISTINCT materia FROM horarios WHERE especialidad = ? AND anio_formacion = ? ORDER BY materia`,
+        [especialidad, anio]
+    );
+    const sel = document.getElementById('ver-materia');
+    sel.innerHTML = '<option value="">-- Todas las materias --</option>';
+    (result.rows || []).forEach(r => sel.innerHTML += `<option value="${r.materia}">${r.materia}</option>`);
+    document.getElementById('ver-grupo-materia').style.display = 'block';
+    await verHorarios();
 }
 
 async function verHorarios() {
     const especialidad = document.getElementById('ver-especialidad').value;
     const anio = document.getElementById('ver-anio').value;
+    const materia = document.getElementById('ver-materia')?.value || '';
     if (!anio) { document.getElementById('ver-grilla').style.display = 'none'; return; }
 
-    const result = await tursodb.query(
-        `SELECT * FROM horarios WHERE especialidad = ? AND anio_formacion = ? ORDER BY hora_inicio`,
-        [especialidad, anio]
-    );
+    let sql = `SELECT * FROM horarios WHERE especialidad = ? AND anio_formacion = ?`;
+    let params = [especialidad, anio];
+    if (materia) { sql += ` AND materia = ?`; params.push(materia); }
+    sql += ` ORDER BY hora_inicio`;
 
+    const result = await tursodb.query(sql, params);
     const grilla = document.getElementById('ver-grilla');
 
     if (!result.rows || result.rows.length === 0) {
-        grilla.innerHTML = '<div class="card"><p style="text-align:center;color:#666;">No hay horarios registrados para este grupo</p></div>';
+        grilla.innerHTML = '<div class="card"><p style="text-align:center;color:#666;">No hay horarios registrados</p></div>';
         grilla.style.display = 'block';
         return;
     }
 
-    const dias = ['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'];
-    const diasLabel = {'LUNES':'Lunes','MARTES':'Martes','MIERCOLES':'Miercoles','JUEVES':'Jueves','VIERNES':'Viernes','SABADO':'Sabado'};
+    const diasOrden = ['LUNES','MARTES','MI\u00c9RCOLES','JUEVES','VIERNES','S\u00c1BADO'];
     const franjas = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00'];
 
     const porDia = {};
-    dias.forEach(d => porDia[d] = []);
-    result.rows.forEach(h => {
-        const dia = h.dia_semana.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
-        if (porDia[dia]) porDia[dia].push(h);
-    });
+    diasOrden.forEach(d => porDia[d] = []);
+    result.rows.forEach(h => { if (porDia[h.dia_semana] !== undefined) porDia[h.dia_semana].push(h); });
 
-    const diasActivos = dias;
-
-    let html = `<h3 style="color:white; margin-bottom:12px;">&#128203; ${especialidad} - ${anio}</h3>`;
+    const titulo = materia ? `${especialidad} - ${anio} | ${materia}` : `${especialidad} - ${anio}`;
+    let html = `<h3 style="color:white; margin-bottom:12px;">&#128203; ${titulo}</h3>`;
     html += '<div class="grilla-wrapper"><table class="grilla-tabla"><thead><tr>';
     html += '<th class="th-hora">Hora</th>';
-    diasActivos.forEach(d => html += `<th class="dia-activo">${diasLabel[d]}</th>`);
+    diasOrden.forEach(d => html += `<th class="dia-activo">${d}</th>`);
     html += '</tr></thead><tbody>';
 
     franjas.forEach((franja, idx) => {
         const sig = franjas[idx + 1];
         if (!sig) return;
-        if (franja === '07:00') html += `<tr><td colspan="${diasActivos.length + 1}" class="separador-turno">&#127751; MANANA</td></tr>`;
-        if (franja === '13:00') html += `<tr><td colspan="${diasActivos.length + 1}" class="separador-turno">&#127749; TARDE</td></tr>`;
+        if (franja === '07:00') html += `<tr><td colspan="7" class="separador-turno">&#127751; MA\u00d1ANA</td></tr>`;
+        if (franja === '13:00') html += `<tr><td colspan="7" class="separador-turno">&#127749; TARDE</td></tr>`;
 
         html += `<tr><td class="td-hora">${franja}<br><span style="font-size:10px;opacity:0.6">${sig}</span></td>`;
-        diasActivos.forEach(dia => {
+        diasOrden.forEach(dia => {
             const clase = porDia[dia].find(h => h.hora_inicio >= franja && h.hora_inicio < sig);
-            if (clase) {
-                html += `<td class="grilla-col tiene-clase"><div class="clase-bloque"><span class="clase-materia">${clase.materia}</span><span class="clase-hora">${clase.hora_inicio} - ${clase.hora_fin}</span></div></td>`;
-            } else {
-                html += '<td class="grilla-col"></td>';
-            }
+            html += clase
+                ? `<td class="grilla-col tiene-clase"><div class="clase-bloque"><span class="clase-materia">${clase.materia}</span><span class="clase-hora">${clase.hora_inicio}-${clase.hora_fin}</span></div></td>`
+                : '<td class="grilla-col"></td>';
         });
         html += '</tr>';
     });
