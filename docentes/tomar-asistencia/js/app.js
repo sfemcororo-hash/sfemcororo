@@ -157,7 +157,7 @@ function renderLista(estudiantes) {
                 <strong>${est.apellido_paterno} ${est.apellido_materno !== 'SIN DATO' ? est.apellido_materno : ''} ${est.nombre}</strong>
                 <small>${est.codigo_unico}</small>
             </div>
-            <span class="estado-badge presente" id="badge-${est.id}">P Presente</span>
+            <span class="estado-badge presente" id="badge-${est.id}">Presente</span>
         `;
         container.appendChild(div);
     });
@@ -174,11 +174,11 @@ function actualizarBadge(estudianteId) {
     const row = document.getElementById(`row-${estudianteId}`);
     const estado = estadosEstudiantes[estudianteId];
     if (estado === 'PRESENTE') {
-        badge.textContent = 'P Presente';
+        badge.textContent = 'Presente';
         badge.className = 'estado-badge presente';
         row.className = 'estudiante-row';
     } else {
-        badge.textContent = 'A Ausente';
+        badge.textContent = 'Ausente';
         badge.className = 'estado-badge ausente';
         row.className = 'estudiante-row ausente';
     }
@@ -221,7 +221,7 @@ async function guardarAsistencia() {
         const confirmar = await showConfirm('Registro duplicado', `Ya existe un registro de <strong>${materia}</strong> para este grupo hoy.<br>¿Deseas guardar un nuevo registro de todas formas?`, 'warning');
         if (!confirmar) return;
     } else {
-        const confirmar = await showConfirm('Guardar Asistencia', `<strong>${especialidad} - ${anio}</strong><br>Materia: ${materia}<br><br>P Presentes: ${presentes} | A Ausentes: ${total - presentes}`, 'success');
+        const confirmar = await showConfirm('Guardar Asistencia', `<strong>${especialidad} - ${anio}</strong><br>Materia: ${materia}<br><br>Presentes: ${presentes} | Ausentes: ${total - presentes}`, 'success');
         if (!confirmar) return;
     }
 
@@ -320,7 +320,7 @@ function renderActualizacion(registros) {
                     <strong>${nombre}</strong>
                     <small>${reg.codigo_unico}</small>
                 </div>
-                <span class="estado-badge presente">P Presente</span>
+                <span class="estado-badge presente">Presente</span>
             `;
         } else {
             div.innerHTML = `
@@ -330,11 +330,11 @@ function renderActualizacion(registros) {
                 </div>
                 <div class="estados-update">
                     <button onclick="marcarCambio('${reg.id}', 'AUSENTE', this)" 
-                        class="btn-estado ${reg.estado === 'AUSENTE' ? 'activo ausente-btn' : ''}">A Ausente</button>
+                        class="btn-estado ${reg.estado === 'AUSENTE' ? 'activo ausente-btn' : ''}">Ausente</button>
                     <button onclick="marcarCambio('${reg.id}', 'RETRASO', this)" 
-                        class="btn-estado ${reg.estado === 'RETRASO' ? 'activo retraso-btn' : ''}">R Retraso</button>
+                        class="btn-estado ${reg.estado === 'RETRASO' ? 'activo retraso-btn' : ''}">Retraso</button>
                     <button onclick="marcarCambio('${reg.id}', 'LICENCIA', this)" 
-                        class="btn-estado ${reg.estado === 'LICENCIA' ? 'activo licencia-btn' : ''}">L Licencia</button>
+                        class="btn-estado ${reg.estado === 'LICENCIA' ? 'activo licencia-btn' : ''}">Licencia</button>
                 </div>
             `;
         }

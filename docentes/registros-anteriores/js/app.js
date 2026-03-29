@@ -155,10 +155,10 @@ function renderDetalle(registros, modo) {
             : '';
 
         const badgeMap = {
-            'PRESENTE': '<span class="estado-badge presente">P Presente</span>',
-            'AUSENTE':  '<span class="estado-badge ausente">A Ausente</span>',
-            'RETRASO':  '<span class="estado-badge retraso">R Retraso</span>',
-            'LICENCIA': '<span class="estado-badge licencia">L Licencia</span>'
+            'PRESENTE': '<span class="estado-badge presente">Presente</span>',
+            'AUSENTE':  '<span class="estado-badge ausente">Ausente</span>',
+            'RETRASO':  '<span class="estado-badge retraso">Retraso</span>',
+            'LICENCIA': '<span class="estado-badge licencia">Licencia</span>'
         };
 
         // En modo ver: solo badge. En modo actualizar: botones solo para no-presentes
@@ -167,11 +167,11 @@ function renderDetalle(registros, modo) {
             accion = `
                 <div class="estados-update">
                     <button onclick="marcarCambio('${reg.id}', 'AUSENTE', this)"
-                        class="btn-estado ${reg.estado === 'AUSENTE' ? 'activo ausente-btn' : ''}">A Ausente</button>
+                        class="btn-estado ${reg.estado === 'AUSENTE' ? 'activo ausente-btn' : ''}">Ausente</button>
                     <button onclick="marcarCambio('${reg.id}', 'RETRASO', this)"
-                        class="btn-estado ${reg.estado === 'RETRASO' ? 'activo retraso-btn' : ''}">R Retraso</button>
+                        class="btn-estado ${reg.estado === 'RETRASO' ? 'activo retraso-btn' : ''}">Retraso</button>
                     <button onclick="marcarCambio('${reg.id}', 'LICENCIA', this)"
-                        class="btn-estado ${reg.estado === 'LICENCIA' ? 'activo licencia-btn' : ''}">L Licencia</button>
+                        class="btn-estado ${reg.estado === 'LICENCIA' ? 'activo licencia-btn' : ''}">Licencia</button>
                 </div>`;
         }
 
