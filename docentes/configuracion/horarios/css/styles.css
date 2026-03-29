@@ -575,3 +575,45 @@ input[type="date"]:focus { outline: none; border-color: #007bff; }
     border: none;
 }
 .card .btn-secondary:hover { background: #5a6268; }
+
+/* Columna de hora */
+.th-hora {
+    background: #343a40;
+    color: white;
+    width: 70px;
+    font-size: 12px;
+    text-align: center;
+}
+.td-hora {
+    background: #f8f9fa;
+    color: #555;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    padding: 8px 4px;
+    border-right: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+
+/* Separador mañana/tarde */
+.separador-turno {
+    background: linear-gradient(135deg, #495057, #343a40);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    letter-spacing: 1px;
+}
+
+/* Celda con clase */
+.grilla-col {
+    padding: 4px;
+    vertical-align: top;
+    border: 1px solid #eee;
+    min-width: 100px;
+    height: 45px;
+}
+.grilla-col.tiene-clase {
+    background: #f3f0ff;
+    padding: 4px;
+}

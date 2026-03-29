@@ -222,38 +222,49 @@ async function verHorarios() {
         return;
     }
 
-    const dias = ['LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
+    const dias = ['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'];
+    const diasLabel = {'LUNES':'Lunes','MARTES':'Martes','MIERCOLES':'Miercoles','JUEVES':'Jueves','VIERNES':'Viernes','SABADO':'Sabado'};
+    const franjas = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00'];
+
     const porDia = {};
     dias.forEach(d => porDia[d] = []);
     result.rows.forEach(h => {
-        if (porDia[h.dia_semana]) porDia[h.dia_semana].push(h);
+        const dia = h.dia_semana.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+        if (porDia[dia]) porDia[dia].push(h);
     });
 
-    let html = `<h3 style="color:white; margin-bottom:12px;">📋 ${especialidad} - ${anio}</h3>`;
+    const diasActivos = dias.filter(d => porDia[d].length > 0);
+    if (diasActivos.length === 0) {
+        grilla.innerHTML = '<div class="card"><p style="text-align:center;color:#666;">No hay horarios para mostrar</p></div>';
+        grilla.style.display = 'block';
+        return;
+    }
+
+    let html = `<h3 style="color:white; margin-bottom:12px;">&#128203; ${especialidad} - ${anio}</h3>`;
     html += '<div class="grilla-wrapper"><table class="grilla-tabla"><thead><tr>';
-    dias.forEach(d => {
-        const tiene = porDia[d].length > 0;
-        html += `<th class="${tiene ? 'dia-activo' : 'dia-vacio'}">${d}</th>`;
-    });
-    html += '</tr></thead><tbody><tr>';
+    html += '<th class="th-hora">Hora</th>';
+    diasActivos.forEach(d => html += `<th class="dia-activo">${diasLabel[d]}</th>`);
+    html += '</tr></thead><tbody>';
 
-    dias.forEach(d => {
-        html += '<td class="grilla-col">';
-        if (porDia[d].length === 0) {
-            html += '<span class="sin-clase">—</span>';
-        } else {
-            porDia[d].sort((a,b) => a.hora_inicio.localeCompare(b.hora_inicio)).forEach(h => {
-                html += `
-                    <div class="clase-bloque">
-                        <span class="clase-materia">${h.materia}</span>
-                        <span class="clase-hora">${h.hora_inicio} - ${h.hora_fin}</span>
-                    </div>`;
-            });
-        }
-        html += '</td>';
-    });
-    html += '</tr></tbody></table></div>';
+    franjas.forEach((franja, idx) => {
+        const sig = franjas[idx + 1];
+        if (!sig) return;
+        if (franja === '07:00') html += `<tr><td colspan="${diasActivos.length + 1}" class="separador-turno">&#127751; MANANA</td></tr>`;
+        if (franja === '13:00') html += `<tr><td colspan="${diasActivos.length + 1}" class="separador-turno">&#127749; TARDE</td></tr>`;
 
+        html += `<tr><td class="td-hora">${franja}<br><span style="font-size:10px;opacity:0.6">${sig}</span></td>`;
+        diasActivos.forEach(dia => {
+            const clase = porDia[dia].find(h => h.hora_inicio >= franja && h.hora_inicio < sig);
+            if (clase) {
+                html += `<td class="grilla-col tiene-clase"><div class="clase-bloque"><span class="clase-materia">${clase.materia}</span><span class="clase-hora">${clase.hora_inicio} - ${clase.hora_fin}</span></div></td>`;
+            } else {
+                html += '<td class="grilla-col"></td>';
+            }
+        });
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
     grilla.innerHTML = html;
     grilla.style.display = 'block';
 }
