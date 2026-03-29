@@ -5,7 +5,7 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    background-image: url('../../fondo_escritorio.jpg');
+    background-image: url('../../../fondo_escritorio.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -16,7 +16,7 @@ body {
 
 @media (max-width: 768px) {
     body {
-        background-image: url('../../fondo_movil.png');
+        background-image: url('../../../fondo_movil.png');
         background-size: 130%;
         background-position: center bottom;
     }
