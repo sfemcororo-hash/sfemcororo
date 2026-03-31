@@ -58,7 +58,6 @@ async function cargarAnios() {
         btnIniciar.style.display = 'none';
         return;
     }
-
     const result = await tursodb.query(
         `SELECT DISTINCT anio_formacion FROM estudiantes WHERE especialidad = ? ORDER BY anio_formacion`,
         [especialidad]
@@ -68,11 +67,9 @@ async function cargarAnios() {
     sel.innerHTML = '<option value="">-- Selecciona --</option>';
     (result.rows || []).sort((a,b) => orden.indexOf(a.anio_formacion) - orden.indexOf(b.anio_formacion))
         .forEach(r => sel.innerHTML += `<option value="${r.anio_formacion}">${r.anio_formacion}</option>`);
-
     grupoAnio.style.display = 'block';
     grupoMateria.style.display = 'none';
     btnIniciar.style.display = 'none';
-    sel.onchange = () => cargarMaterias();
 }
 
 async function cargarMaterias() {
@@ -80,23 +77,22 @@ async function cargarMaterias() {
     const anio = document.getElementById('sel-anio').value;
     const grupoMateria = document.getElementById('grupo-materia');
     const btnIniciar = document.getElementById('btn-iniciar');
-
     if (!anio) { grupoMateria.style.display = 'none'; btnIniciar.style.display = 'none'; return; }
 
     const result = await tursodb.query(
         `SELECT nombre FROM materias WHERE especialidad = ? AND anio_formacion = ? ORDER BY nombre`,
         [especialidad, anio]
     );
-
     const sel = document.getElementById('sel-materia');
     sel.innerHTML = '<option value="">-- Selecciona --</option>';
     (result.rows || []).forEach(m => sel.innerHTML += `<option value="${m.nombre}">${m.nombre}</option>`);
-
     grupoMateria.style.display = 'block';
     btnIniciar.style.display = 'none';
-    sel.onchange = () => {
-        btnIniciar.style.display = sel.value ? 'block' : 'none';
-    };
+}
+
+function mostrarBtnIniciar() {
+    const materia = document.getElementById('sel-materia').value;
+    document.getElementById('btn-iniciar').style.display = materia ? 'block' : 'none';
 }
 
 // ========== INICIAR RULETA ==========
