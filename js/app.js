@@ -208,39 +208,36 @@ async function syncOfflineQueue() {
         
         for (let i = 0; i < batch.length; i++) {
             const asistencia = batch[i];
-            console.log(`Procesando asistencia ${i+1}/${batch.length}:`, asistencia);
             
             try {
+                const tabla = asistencia.tipo === 'personal' ? 'asistencias_personal' : 'asistencias';
+                const campo = asistencia.tipo === 'personal' ? 'personal_id' : 'estudiante_id';
+                const personaId = asistencia.persona_id;
+
                 // VERIFICAR SI YA EXISTE antes de insertar
                 const existente = await tursodb.query(`
-                    SELECT id FROM asistencias 
-                    WHERE estudiante_id = ? AND evento_id = ?
-                `, [asistencia.estudiante_id, asistencia.evento_id]);
-                
-                console.log('Verificación duplicado:', existente);
+                    SELECT id FROM ${tabla} WHERE ${campo} = ? AND evento_id = ?
+                `, [personaId, asistencia.evento_id]);
                 
                 if (existente && existente.rows && existente.rows.length > 0) {
-                    // Ya existe - marcar para eliminar de cola
                     skippedCount++;
                     syncedIndices.push(i);
-                    console.log(`✅ Asistencia ya existe en BD, eliminando de cola`);
                 } else {
-                    // No existe - insertar usando query directo
-                    console.log('Insertando en BD:', asistencia.estudiante_id, asistencia.evento_id, asistencia.timestamp);
                     const result = await tursodb.query(`
-                        INSERT INTO asistencias (estudiante_id, evento_id, timestamp)
+                        INSERT INTO ${tabla} (${campo}, evento_id, timestamp)
                         VALUES (?, ?, ?)
-                    `, [asistencia.estudiante_id, asistencia.evento_id, asistencia.timestamp]);
+                    `, [personaId, asistencia.evento_id, asistencia.timestamp]);
                     
-                    console.log('Resultado INSERT:', result);
-                    syncedCount++;
-                    syncedIndices.push(i);
-                    console.log(`✅ Asistencia sincronizada exitosamente`);
+                    if (!result.error) {
+                        syncedCount++;
+                        syncedIndices.push(i);
+                    } else {
+                        errorCount++;
+                    }
                 }
             } catch (err) {
-                // Error - NO marcar para eliminar, se quedará en la cola
                 errorCount++;
-                console.error('❌ Error sincronizando asistencia:', err);
+                console.error('Error sincronizando:', err);
             }
         }
         
