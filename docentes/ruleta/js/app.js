@@ -236,10 +236,22 @@ function girarRuleta() {
 }
 
 async function mostrarGanador() {
+    if (pendientes.length === 0) return;
+
+    // Calcular ganador: la flecha apunta arriba (top = angulo PI*1.5 en coordenadas canvas)
+    // El canvas dibuja desde anguloActual, el segmento 0 empieza en anguloActual
+    // La flecha apunta a -PI/2 (arriba), entonces buscamos que angulo del canvas corresponde a arriba
     const segmento = (Math.PI * 2) / pendientes.length;
-    const anguloNorm = ((Math.PI * 2) - (anguloActual % (Math.PI * 2))) % (Math.PI * 2);
-    const indice = Math.floor(anguloNorm / segmento) % pendientes.length;
+    // Angulo que apunta arriba relativo al canvas rotado
+    const anguloArriba = (Math.PI * 1.5 - anguloActual % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    const indice = Math.floor(anguloArriba / segmento) % pendientes.length;
     const ganador = pendientes[indice];
+
+    if (!ganador) {
+        girando = false;
+        document.getElementById('btn-girar').disabled = false;
+        return;
+    }
 
     const apellidoM = ganador.apellido_materno !== 'SIN DATO' ? ganador.apellido_materno : '';
     const nombre = `${ganador.apellido_paterno} ${apellidoM} ${ganador.nombre}`.trim();
@@ -259,11 +271,13 @@ async function mostrarGanador() {
 
     // Quitar de pendientes y redibujar
     pendientes = pendientes.filter(e => e.id !== ganador.id);
-    anguloActual = 0;
     dibujarRuleta();
     actualizarInfo();
     await cargarReporte();
-    document.getElementById('btn-girar').disabled = pendientes.length === 0;
+
+    // Reactivar boton despues de cerrar celebracion
+    document.getElementById('btn-girar').disabled = false;
+    girando = false;
 
     // Mostrar celebracion
     mostrarCelebracion(nombre, ganador.codigo_unico);
