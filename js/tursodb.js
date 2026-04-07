@@ -174,7 +174,7 @@ class TursoDB {
     
     // Inicializar datos
     async initializeData() {
-        if (sessionStorage.getItem('db_initialized') === 'v2') return;
+        if (sessionStorage.getItem('db_initialized') === 'v4') return;
         // Eliminar tablas obsoletas
         await this.query(`DROP TABLE IF EXISTS perfiles`);
         await this.query(`DROP TABLE IF EXISTS estudiantes_old`);
@@ -433,7 +433,18 @@ class TursoDB {
         await this.query(`ALTER TABLE participaciones ADD COLUMN sesion_id TEXT`).catch(() => {});
 
         await this.query(`ALTER TABLE ruleta_sesiones ADD COLUMN materia TEXT`).catch(() => {});
-        sessionStorage.setItem('db_initialized', 'v3');
+
+        await this.query(`
+            CREATE TABLE IF NOT EXISTS asistencias_personal (
+                id TEXT PRIMARY KEY,
+                personal_id TEXT NOT NULL,
+                evento_id TEXT NOT NULL,
+                timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        sessionStorage.setItem('db_initialized', 'v4');
     }
 }
 
