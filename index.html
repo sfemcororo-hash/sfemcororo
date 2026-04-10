@@ -45,22 +45,22 @@
             </div>
             <div class="container">
                 <div class="modules-grid">
-                    <div class="module-card" onclick="showAsistenciaModule()">
+                    <div class="module-card" id="card-asistencia" onclick="showAsistenciaModule()">
                         <div class="module-icon">📋</div>
                         <h3>Asistencia</h3>
                         <p>Gestión de estudiantes, eventos y registro de asistencias</p>
                     </div>
-                    <div class="module-card" onclick="showGestionUsuarios()">
+                    <div class="module-card" id="card-gestion" onclick="showGestionUsuarios()">
                         <div class="module-icon">👥</div>
                         <h3>Gestión de Usuarios</h3>
                         <p>Registro de docentes y carga masiva de estudiantes</p>
                     </div>
-                    <div class="module-card" onclick="showBibliotecaModule()">
+                    <div class="module-card" id="card-biblioteca" onclick="showBibliotecaModule()">
                         <div class="module-icon">📚</div>
                         <h3>Biblioteca</h3>
                         <p>Sistema de gestión bibliotecaria (próximamente)</p>
                     </div>
-                    <div class="module-card" onclick="window.location.href='docentes/index.html'">
+                    <div class="module-card" id="card-docentes" onclick="window.location.href='docentes/index.html'">
                         <div class="module-icon">👨🏫</div>
                         <h3>Docentes</h3>
                         <p>Gestión de docentes (próximamente)</p>
@@ -452,6 +452,7 @@
                     <select id="usuario-rol" required>
                         <option value="">Seleccionar Rol</option>
                         <option value="admin">Administrador</option>
+                        <option value="docente">Docente</option>
                         <option value="usuario">Usuario</option>
                     </select>
                     <button onclick="registrarUsuario()" class="btn-primary">Registrar Usuario</button>
@@ -631,6 +632,7 @@
                     <label style="color: #666; font-size: 14px; margin-bottom: 5px;">Rol:</label>
                     <select id="edit-usuario-rol">
                         <option value="admin">Administrador</option>
+                        <option value="docente">Docente</option>
                         <option value="usuario">Usuario</option>
                     </select>
                     <button onclick="actualizarUsuarioTurso()" class="btn-primary">Actualizar Usuario</button>
@@ -863,6 +865,6 @@
             });
         });
     </script>
-    <script src="js/app.js?v=2026040805"></script>
+    <script src="js/app.js?v=2026040806"></script>
 </body>
 </html>
