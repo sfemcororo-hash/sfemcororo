@@ -458,22 +458,23 @@ let isScanningBib = false;
 
 function startCameraBib() {
     const container = document.getElementById('scanner-container-bib');
-    const photoTools = document.getElementById('photo-tools-bib');
     const btnCamera = document.getElementById('btn-camera-bib');
-    const btnFile = document.getElementById('btn-file-bib');
 
+    // Si ya está activa, detener
     if (html5QrCodeBib) {
         if (html5QrCodeBib.isScanning) html5QrCodeBib.stop().catch(() => {});
         html5QrCodeBib = null;
+        container.style.display = 'none';
+        container.innerHTML = '';
+        btnCamera.className = 'btn-secondary';
+        btnCamera.textContent = '📷 Cámara';
+        return;
     }
 
-    photoTools.style.display = 'none';
     container.innerHTML = '<div id="camera-reader-bib" style="width:100%; max-width:500px; margin:0 auto; min-height:300px; background:#000; border-radius:8px;"></div>';
     container.style.display = 'block';
     btnCamera.className = 'btn-primary';
     btnCamera.textContent = '📷 Cámara Activa';
-    btnFile.className = 'btn-secondary';
-    btnFile.textContent = '📁 Cargar Foto';
 
     setTimeout(() => {
         html5QrCodeBib = new Html5Qrcode('camera-reader-bib');
@@ -482,8 +483,11 @@ function startCameraBib() {
             { fps: 10, qrbox: { width: 250, height: 250 } },
             onQrScanBib,
             () => {}
-        ).catch(err => {
+        ).catch(() => {
             container.innerHTML = `<div style="padding:20px; color:#dc3545; background:#f8d7da; border-radius:8px; text-align:center;">❌ No se pudo acceder a la cámara.<br><small>Verifica los permisos del navegador</small></div>`;
+            btnCamera.className = 'btn-secondary';
+            btnCamera.textContent = '📷 Cámara';
+            html5QrCodeBib = null;
         });
     }, 300);
 }
