@@ -1456,7 +1456,7 @@ async function onScanSuccess(qrData, decodedResult) {
 
         if (!estudiante && !personal) {
             showBigAlert('Código no encontrado', 'error', 'Este código QR no corresponde a ningún estudiante registrado');
-            setTimeout(() => { isScanning = false; }, 5000);
+            setTimeout(() => { isScanning = false; }, 2000);
             return;
         }
 
@@ -1477,7 +1477,7 @@ async function onScanSuccess(qrData, decodedResult) {
             
             if (existeEnBD && existeEnBD.rows && existeEnBD.rows.length > 0) {
                 showBigAlert(nombreCompleto, 'warning', 'YA REGISTRADO\n\nEsta persona ya tiene su asistencia registrada');
-                setTimeout(() => { isScanning = false; }, 5000);
+                setTimeout(() => { isScanning = false; }, 2000);
                 return;
             }
         } catch (error) {
@@ -1491,7 +1491,7 @@ async function onScanSuccess(qrData, decodedResult) {
         
         if (existeOffline) {
             showBigAlert(nombreCompleto, 'warning', 'YA REGISTRADO\n\nEsta persona ya tiene su asistencia guardada (pendiente de sincronizar)');
-            setTimeout(() => { isScanning = false; }, 5000);
+            setTimeout(() => { isScanning = false; }, 2000);
             return;
         }
 
@@ -1530,7 +1530,7 @@ async function onScanSuccess(qrData, decodedResult) {
         setTimeout(() => { 
             console.log('⏰ Liberando isScanning después de 5 segundos');
             isScanning = false;
-        }, 5000); // 5 segundos de delay entre escaneos
+        }, 2000); // 2 segundos de delay entre escaneos
 
     } catch (error) {
         console.error('❌ Error general en onScanSuccess:', error);
@@ -1538,7 +1538,7 @@ async function onScanSuccess(qrData, decodedResult) {
         setTimeout(() => { 
             console.log('❌ Liberando isScanning por error');
             isScanning = false; 
-        }, 5000);
+        }, 2000);
     }
     
     console.log('🏁 onScanSuccess terminado');
