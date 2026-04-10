@@ -450,3 +450,100 @@ async function exportarReporteExcel() {
 
     XLSX.writeFile(wb, `Biblioteca_${evento.nombre.replace(/[^a-zA-Z0-9]/g,'_')}.xlsx`);
 }
+
+// ========== ESCÁNER QR BIBLIOTECA ==========
+
+let html5QrCodeBib = null;
+let isScanningBib = false;
+
+function startCameraBib() {
+    const container = document.getElementById('scanner-container-bib');
+    const photoTools = document.getElementById('photo-tools-bib');
+    const btnCamera = document.getElementById('btn-camera-bib');
+    const btnFile = document.getElementById('btn-file-bib');
+
+    if (html5QrCodeBib) {
+        if (html5QrCodeBib.isScanning) html5QrCodeBib.stop().catch(() => {});
+        html5QrCodeBib = null;
+    }
+
+    photoTools.style.display = 'none';
+    container.innerHTML = '<div id="camera-reader-bib" style="width:100%; max-width:500px; margin:0 auto; min-height:300px; background:#000; border-radius:8px;"></div>';
+    container.style.display = 'block';
+    btnCamera.className = 'btn-primary';
+    btnCamera.textContent = '📷 Cámara Activa';
+    btnFile.className = 'btn-secondary';
+    btnFile.textContent = '📁 Cargar Foto';
+
+    setTimeout(() => {
+        html5QrCodeBib = new Html5Qrcode('camera-reader-bib');
+        html5QrCodeBib.start(
+            { facingMode: 'environment' },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            onQrScanBib,
+            () => {}
+        ).catch(err => {
+            container.innerHTML = `<div style="padding:20px; color:#dc3545; background:#f8d7da; border-radius:8px; text-align:center;">❌ No se pudo acceder a la cámara.<br><small>Verifica los permisos del navegador</small></div>`;
+        });
+    }, 300);
+}
+
+function showFileUploadBib() {
+    const container = document.getElementById('scanner-container-bib');
+    const photoTools = document.getElementById('photo-tools-bib');
+    const btnCamera = document.getElementById('btn-camera-bib');
+    const btnFile = document.getElementById('btn-file-bib');
+
+    if (html5QrCodeBib) {
+        if (html5QrCodeBib.isScanning) html5QrCodeBib.stop().catch(() => {});
+        html5QrCodeBib = null;
+    }
+
+    container.innerHTML = '';
+    container.style.display = 'none';
+    photoTools.style.display = 'block';
+    document.getElementById('qr-file-input-bib').value = '';
+    btnCamera.className = 'btn-secondary';
+    btnCamera.textContent = '📷 Cámara';
+    btnFile.className = 'btn-primary';
+    btnFile.textContent = '📁 Cargar Foto Activo';
+}
+
+function processImageBib() {
+    const fileInput = document.getElementById('qr-file-input-bib');
+    const file = fileInput.files[0];
+    if (!file) { alert('Selecciona una imagen primero'); return; }
+
+    const tempId = 'temp-bib-' + Date.now();
+    const tempDiv = document.createElement('div');
+    tempDiv.id = tempId;
+    tempDiv.style.display = 'none';
+    document.body.appendChild(tempDiv);
+
+    const scanner = new Html5Qrcode(tempId);
+    scanner.scanFile(file, true)
+        .then(decoded => {
+            document.body.removeChild(tempDiv);
+            onQrScanBib(decoded);
+        })
+        .catch(() => {
+            document.body.removeChild(tempDiv);
+            alert('❌ No se pudo leer el código QR de la imagen.');
+        });
+    fileInput.value = '';
+}
+
+async function onQrScanBib(qrData) {
+    if (isScanningBib) return;
+    isScanningBib = true;
+
+    // Extraer código único (último campo después de |)
+    const partes = qrData.split('|');
+    const codigoUnico = partes[partes.length - 1].trim();
+
+    // Poner el código en el input y registrar
+    document.getElementById('ci-input').value = codigoUnico;
+    await buscarYRegistrar();
+
+    setTimeout(() => { isScanningBib = false; }, 2000);
+}
