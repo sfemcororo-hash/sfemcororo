@@ -131,6 +131,96 @@ const TABLAS = [
     'biblioteca_visitas'
 ];
 
+const ESTRUCTURA = {
+    usuarios: `CREATE TABLE IF NOT EXISTS usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ci TEXT,
+        nombre TEXT NOT NULL,
+        apellido_paterno TEXT,
+        apellido_materno TEXT,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        celular TEXT,
+        especialidad TEXT,
+        codigo_unico TEXT,
+        rol TEXT DEFAULT 'usuario',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    estudiantes: `CREATE TABLE IF NOT EXISTS estudiantes (
+        id TEXT PRIMARY KEY,
+        codigo_unico TEXT UNIQUE NOT NULL,
+        dni TEXT NOT NULL,
+        nombre TEXT NOT NULL,
+        apellido_paterno TEXT NOT NULL,
+        apellido_materno TEXT,
+        especialidad TEXT NOT NULL,
+        anio_formacion TEXT NOT NULL,
+        celular TEXT,
+        email TEXT,
+        password TEXT NOT NULL DEFAULT 'estudiante123',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    administrativos: `CREATE TABLE IF NOT EXISTS administrativos (
+        id TEXT PRIMARY KEY,
+        codigo_unico TEXT UNIQUE NOT NULL,
+        dni TEXT NOT NULL,
+        nombre TEXT NOT NULL,
+        apellido_paterno TEXT NOT NULL,
+        apellido_materno TEXT,
+        personal TEXT NOT NULL,
+        cargo TEXT NOT NULL,
+        celular TEXT,
+        email TEXT,
+        password TEXT NOT NULL DEFAULT 'personal123',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    eventos: `CREATE TABLE IF NOT EXISTS eventos (
+        id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        fecha_inicio TEXT NOT NULL,
+        fecha_fin TEXT NOT NULL,
+        hora_inicio TEXT NOT NULL,
+        hora_fin TEXT NOT NULL,
+        imagen_url TEXT,
+        usuario_id TEXT NOT NULL,
+        activo INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    asistencias: `CREATE TABLE IF NOT EXISTS asistencias (
+        id TEXT PRIMARY KEY,
+        estudiante_id TEXT NOT NULL,
+        evento_id TEXT NOT NULL,
+        timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    asistencias_personal: `CREATE TABLE IF NOT EXISTS asistencias_personal (
+        id TEXT PRIMARY KEY,
+        personal_id TEXT NOT NULL,
+        evento_id TEXT NOT NULL,
+        timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    biblioteca_eventos: `CREATE TABLE IF NOT EXISTS biblioteca_eventos (
+        id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        fecha_inicio TEXT NOT NULL,
+        fecha_fin TEXT NOT NULL,
+        activo INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    biblioteca_visitas: `CREATE TABLE IF NOT EXISTS biblioteca_visitas (
+        id TEXT PRIMARY KEY,
+        evento_id TEXT NOT NULL,
+        persona_ci TEXT NOT NULL,
+        persona_nombre TEXT NOT NULL,
+        persona_tipo TEXT NOT NULL,
+        persona_especialidad TEXT,
+        persona_anio TEXT,
+        persona_cargo TEXT,
+        timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+    )`
+};
+
 function log(msg, tipo = 'info') {
     const logEl = document.getElementById('log');
     logEl.style.display = 'block';
@@ -149,7 +239,12 @@ function setProgress(barId, progressId, pct) {
 async function hacerBackup() {
     document.getElementById('log').innerHTML = '';
     log('🔄 Iniciando backup...', 'info');
-    const backup = { fecha: new Date().toISOString(), version: '1.0', tablas: {} };
+    const backup = { 
+        fecha: new Date().toISOString(), 
+        version: '2.0',
+        estructura: ESTRUCTURA,
+        tablas: {} 
+    };
 
     for (let i = 0; i < TABLAS.length; i++) {
         const tabla = TABLAS[i];
@@ -173,6 +268,7 @@ async function hacerBackup() {
 
     const total = Object.values(backup.tablas).reduce((s, t) => s + t.length, 0);
     log(`✅ Backup completado — ${total} registros totales`, 'ok');
+    log(`📁 Incluye estructura SQL para migrar a nueva BD`, 'info');
     log(`📁 Archivo: backup_esfm_${new Date().toISOString().split('T')[0]}.json`, 'info');
 }
 
@@ -204,6 +300,19 @@ async function restaurarBackup(file) {
         if (!backup.tablas) { log('❌ Archivo de backup inválido', 'err'); return; }
 
         log(`📅 Backup del: ${new Date(backup.fecha).toLocaleString('es-BO')}`, 'info');
+        log('🗄️ Creando estructura de tablas...', 'info');
+
+        // Crear tablas si no existen (usando estructura del backup o la local)
+        const estructura = backup.estructura || ESTRUCTURA;
+        for (const tabla of Object.keys(estructura)) {
+            try {
+                await tursodb.query(estructura[tabla]);
+                log(`📋 ${tabla}: estructura lista`, 'info');
+            } catch(e) {
+                log(`⚠️ ${tabla}: ${e.message}`, 'warn');
+            }
+        }
+
         log('🗑️ Limpiando datos actuales...', 'warn');
 
         // Eliminar en orden para respetar dependencias
